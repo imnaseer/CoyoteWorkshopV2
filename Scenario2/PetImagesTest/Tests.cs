@@ -71,41 +71,102 @@ namespace PetImagesTest
             var imageContainer = await database.CreateContainerAsync(Constants.ImageContainerName);
             var petImagesClient = new TestPetImagesClient(accountContainer, imageContainer);
 
-            // Create an account request payload
-            var account = new Account()
-            {
-                Name = "MyAccount"
-            };
+            string accountName = "MyAccount";
+            string imageName = "pet.jpg";
 
-            var createResult = await petImagesClient.CreateAccountAsync(account);
+            var createResult = await petImagesClient.CreateAccountAsync(new Account()
+            {
+                Name = accountName
+            });
             Assert.IsTrue(createResult.StatusCode == HttpStatusCode.OK);
 
-            string imageName = "pet.jpg";
-            var createImageTask1 = petImagesClient.CreateOrUpdateImageAsync(account.Name, new Image()
+            var oldImage = new Image()
             {
                 Name = imageName,
                 Content = GetDogImageBytes(),
                 LastModifiedTimestamp = DateTime.UtcNow
-            });
-            var createImageTask2 = petImagesClient.CreateOrUpdateImageAsync(account.Name, new Image()
+            };
+
+            var newImage = new Image()
             {
                 Name = imageName,
                 Content = GetCatImageBytes(),
                 LastModifiedTimestamp = DateTime.UtcNow.AddMinutes(10)
-            });
+            };
 
-            await Task.WhenAll(createImageTask1, createImageTask2);
+            var createOldImageTask = petImagesClient.CreateOrUpdateImageAsync(accountName, oldImage);
+            var createNewImageTask = petImagesClient.CreateOrUpdateImageAsync(accountName, newImage);
 
-            var statusCode1 = createImageTask1.Result.StatusCode;
-            var statusCode2 = createImageTask2.Result.StatusCode;
+            await Task.WhenAll(createOldImageTask, createNewImageTask);
 
-            // TODO: Write the assertion here ...
+            var createOldImageResult = createOldImageTask.Result;
+            var createNewImageResult = createNewImageTask.Result;
+
+            Assert.IsTrue(
+                (createOldImageResult.StatusCode == HttpStatusCode.Conflict && createNewImageResult.StatusCode == HttpStatusCode.OK) ||
+                (createOldImageResult.StatusCode == HttpStatusCode.OK && createNewImageResult.StatusCode == HttpStatusCode.OK));
+
+            var imageResult = await petImagesClient.GetImageAsync(accountName, imageName);
+            Assert.IsTrue(imageResult.StatusCode == HttpStatusCode.OK);
+            Assert.IsTrue(imageResult.Resource.LastModifiedTimestamp == newImage.LastModifiedTimestamp);
         }
 
         [TestMethod]
         public async Task TestConcurrentImageUpdates()
         {
-            // ...
+            // Initialize the mock in-memory DB and account manager.
+            var cosmosState = new MockCosmosState();
+            var database = new MockCosmosDatabase(cosmosState);
+            var accountContainer = await database.CreateContainerAsync(Constants.AccountContainerName);
+            var imageContainer = await database.CreateContainerAsync(Constants.ImageContainerName);
+            var petImagesClient = new TestPetImagesClient(accountContainer, imageContainer);
+
+            string accountName = "MyAccount";
+            string imageName = "pet.jpg";
+
+            var createAccountResult = await petImagesClient.CreateAccountAsync(new Account()
+            {
+                Name = accountName
+            });
+            Assert.IsTrue(createAccountResult.StatusCode == HttpStatusCode.OK);
+
+            var createImageResult = await petImagesClient.CreateOrUpdateImageAsync(accountName, new Image()
+            {
+                Name = imageName,
+                Content = GetDogImageBytes(),
+                LastModifiedTimestamp = DateTime.UtcNow
+            });
+            Assert.IsTrue(createImageResult.StatusCode == HttpStatusCode.OK);
+
+            var oldImage = new Image()
+            {
+                Name = imageName,
+                Content = GetDogImageBytes(),
+                LastModifiedTimestamp = DateTime.UtcNow.AddMinutes(5)
+            };
+
+            var newImage = new Image()
+            {
+                Name = imageName,
+                Content = GetCatImageBytes(),
+                LastModifiedTimestamp = DateTime.UtcNow.AddMinutes(10)
+            };
+
+            var updateOldImageTask = petImagesClient.CreateOrUpdateImageAsync(accountName, oldImage);
+            var updateNewImageTask = petImagesClient.CreateOrUpdateImageAsync(accountName, newImage);
+
+            await Task.WhenAll(updateOldImageTask, updateNewImageTask);
+
+            var updateOldImageResult = updateOldImageTask.Result;
+            var updateNewImageResult = updateNewImageTask.Result;
+
+            Assert.IsTrue(
+                (updateOldImageResult.StatusCode == HttpStatusCode.Conflict && updateNewImageResult.StatusCode == HttpStatusCode.OK) ||
+                (updateOldImageResult.StatusCode == HttpStatusCode.OK && updateNewImageResult.StatusCode == HttpStatusCode.OK));
+
+            var imageResult = await petImagesClient.GetImageAsync(accountName, imageName);
+            Assert.IsTrue(imageResult.StatusCode == HttpStatusCode.OK);
+            Assert.IsTrue(imageResult.Resource.LastModifiedTimestamp == newImage.LastModifiedTimestamp);
         }
         
         /// <summary>

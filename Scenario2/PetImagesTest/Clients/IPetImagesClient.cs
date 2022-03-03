@@ -12,5 +12,6 @@ namespace PetImagesTest.Clients
 
         public Task<ServiceResponse<Image>> CreateOrUpdateImageAsync(string accountName, Image image);
 
+        public Task<ServiceResponse<Image>> GetImageAsync(string accountName, string imageName);
     }
 }

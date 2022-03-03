@@ -27,7 +27,7 @@ namespace PetImages.Controllers
         /// Create or update an image (as long as it has a newer last modified timestamp)
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<Image>> CreateImageAsync(string accountName, Image image)
+        public async Task<ActionResult<Image>> CreateOrUpdateImageAsync(string accountName, Image image)
         {
             if (!await StorageHelper.DoesItemExist<AccountItem>(this.AccountContainer, partitionKey: accountName, id: accountName))
             {
@@ -41,5 +41,20 @@ namespace PetImages.Controllers
 
             return this.Ok(imageItem.ToImage());
         }
+
+        [HttpGet]
+        public async Task<ActionResult<Image>> GetImageAsync(string accountName, string imageName)
+        {
+            try
+            {
+                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
+                return this.Ok(imageItem.ToImage());
+            }
+            catch (DatabaseItemDoesNotExistException)
+            {
+                return this.NotFound();
+            }
+        }
+
     }
 }
