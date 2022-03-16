@@ -16,14 +16,14 @@ namespace PetImagesTest.Clients
     {
         private readonly ICosmosContainer AccountContainer;
         private readonly ICosmosContainer ImageContainer;
-        private readonly IBlobContainer BlobContainer;
+        private readonly IStorageAccount BlobContainer;
 
         public TestPetImagesClient(ICosmosContainer accountContainer)
         {
             this.AccountContainer = accountContainer;
         }
 
-        public TestPetImagesClient(ICosmosContainer accountContainer, ICosmosContainer imageContainer, IBlobContainer blobContainer)
+        public TestPetImagesClient(ICosmosContainer accountContainer, ICosmosContainer imageContainer, IStorageAccount blobContainer)
         {
             this.AccountContainer = accountContainer;
             this.ImageContainer = imageContainer;
@@ -42,15 +42,15 @@ namespace PetImagesTest.Clients
             });
         }
 
-        public async Task<ServiceResponse<Image>> CreateImageAsync(string accountName, Image image)
+        public async Task<ServiceResponse<ImageRecord>> CreateImageAsync(string accountName, ImageRecord image)
         {
             var imageCopy = TestHelper.Clone(image);
 
             return await Task.Run(async () =>
             {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer);
-                var actionResult = await InvokeControllerAction(async () => await controller.CreateImageAsync(accountName, imageCopy));
-                return ExtractServiceResponse<Image>(actionResult.Result);
+                var actionResult = await InvokeControllerAction(async () => await controller.CreateImageRecordAsync(accountName, imageCopy));
+                return ExtractServiceResponse<ImageRecord>(actionResult.Result);
             });
         }
 

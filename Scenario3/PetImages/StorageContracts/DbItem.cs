@@ -11,5 +11,8 @@ namespace PetImages.Entities
         public string Id { get; set; }
 
         public abstract string PartitionKey { get; }
+
+        [JsonPropertyName("_etag")]
+        public string ETag { get; set; }
     }
 }

@@ -31,4 +31,28 @@ namespace PetImages.Exceptions
     public class DatabaseItemDoesNotExistException : DatabaseException
     {
     }
+
+    public class DatabasePreconditionFailedException : DatabaseException
+    {
+    }
+
+    public class StorageException : Exception
+    {
+    }
+
+    public class StorageContainerAlreadyExistsException : StorageException
+    {
+    }
+
+    public class StorageContainerBeingDeletedException : StorageException
+    {
+    }
+
+    public class StorageContainerDoesNotExistException : StorageException
+    {
+    }
+
+    public class BlobDoesNotExistException : StorageException
+    {
+    }
 }

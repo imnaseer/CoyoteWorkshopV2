@@ -3,10 +3,10 @@
 
 using PetImages.Entities;
 using PetImages.Exceptions;
-
-using Container = System.Collections.Concurrent.ConcurrentDictionary<string, PetImages.Entities.DbItem>;
-using Database = System.Collections.Concurrent.ConcurrentDictionary<
-    string, System.Collections.Concurrent.ConcurrentDictionary<string, PetImages.Entities.DbItem>>;
+using System;
+using Container = System.Collections.Generic.Dictionary<string, PetImages.Entities.DbItem>;
+using Database = System.Collections.Generic.Dictionary<
+    string, System.Collections.Generic.Dictionary<string, PetImages.Entities.DbItem>>;
 
 namespace PetImagesTest.StorageMocks
 {
@@ -34,20 +34,32 @@ namespace PetImagesTest.StorageMocks
         {
             EnsureItemDoesNotExistInDatabase(containerName, item.PartitionKey, item.Id);
 
+            item.ETag = Guid.NewGuid().ToString();
+
             var container = this.Database[containerName];
-            _ = container.TryAdd(
-                GetCombinedKey(item.PartitionKey, item.Id),
-                item);
+            container[GetCombinedKey(item.PartitionKey, item.Id)] = item;
         }
 
-        public void UpsertItem(string containerName, DbItem item)
+        public void UpsertItem(string containerName, DbItem item, string ifMatchEtag)
         {
             EnsureContainerExistsInDatabase(containerName);
+            EnsureEtagMatch(containerName, item.PartitionKey, item.Id, ifMatchEtag);
+
+            item.ETag = Guid.NewGuid().ToString();
 
             var container = this.Database[containerName];
-            _ = container.TryAdd(
-                GetCombinedKey(item.PartitionKey, item.Id),
-                item);
+            container[GetCombinedKey(item.PartitionKey, item.Id)] = item;
+        }
+
+        public void ReplaceItem(string containerName, DbItem item, string ifMatchEtag)
+        {
+            EnsureItemExistsInDatabase(containerName, item.PartitionKey, item.Id);
+            EnsureEtagMatch(containerName, item.PartitionKey, item.Id, ifMatchEtag);
+
+            item.ETag = Guid.NewGuid().ToString();
+
+            var container = this.Database[containerName];
+            container[GetCombinedKey(item.PartitionKey, item.Id)] = item;
         }
 
         public DbItem GetItem(string containerName, string partitionKey, string id)
@@ -55,16 +67,16 @@ namespace PetImagesTest.StorageMocks
             EnsureItemExistsInDatabase(containerName, partitionKey, id);
 
             var container = this.Database[containerName];
-            _ = container.TryGetValue(GetCombinedKey(partitionKey, id), out DbItem item);
-            return item;
+            return container[GetCombinedKey(partitionKey, id)];
         }
 
-        public void DeleteItem(string containerName, string partitionKey, string id)
+        public void DeleteItem(string containerName, string partitionKey, string id, string ifMatchEtag)
         {
             EnsureItemExistsInDatabase(containerName, partitionKey, id);
+            EnsureEtagMatch(containerName, partitionKey, id, ifMatchEtag);
 
             var container = this.Database[containerName];
-            _ = container.TryRemove(GetCombinedKey(partitionKey, id), out DbItem _);
+            container.Remove(GetCombinedKey(partitionKey, id));
         }
 
         internal void EnsureContainerDoesNotExistInDatabase(string containerName)
@@ -102,6 +114,26 @@ namespace PetImagesTest.StorageMocks
             if (container.ContainsKey(GetCombinedKey(partitionKey, id)))
             {
                 throw new DatabaseItemAlreadyExistsException();
+            }
+        }
+
+        internal void EnsureEtagMatch(string containerName, string partitionKey, string id, string ifMatchEtag)
+        {
+            if (ifMatchEtag == null)
+            {
+                return;
+            }
+
+            var container = this.Database[containerName];
+
+            var combinedKey = GetCombinedKey(partitionKey, id);
+            if (container.ContainsKey(combinedKey))
+            {
+                var item = container[combinedKey];
+                if (item.ETag != ifMatchEtag)
+                {
+                    throw new DatabasePreconditionFailedException();
+                }
             }
         }
 

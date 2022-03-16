@@ -61,7 +61,7 @@ namespace PetImagesTest
             var database = new MockCosmosDatabase(cosmosState);
             var accountContainer = (MockCosmosContainer)await database.CreateContainerAsync(Constants.AccountContainerName);
             var imageContainer = (MockCosmosContainer)await database.CreateContainerAsync(Constants.ImageContainerName);
-            var blobContainer = new MockBlobContainerProvider();
+            var blobContainer = new MockStorageAccount();
 
             var petImagesClient = new TestPetImagesClient(accountContainer, imageContainer, blobContainer);
 
@@ -77,8 +77,8 @@ namespace PetImagesTest
             var accountResult = await petImagesClient.CreateAccountAsync(account);
             Assert.IsTrue(accountResult.StatusCode == HttpStatusCode.OK);
 
-            var task1 = petImagesClient.CreateImageAsync(accountName, new Image() { Name = imageName, Content = GetDogImageBytes() });
-            var task2 = petImagesClient.CreateImageAsync(accountName, new Image() { Name = imageName, Content = GetDogImageBytes() });
+            var task1 = petImagesClient.CreateImageAsync(accountName, new ImageRecord() { Name = imageName, Content = GetDogImageBytes() });
+            var task2 = petImagesClient.CreateImageAsync(accountName, new ImageRecord() { Name = imageName, Content = GetDogImageBytes() });
             await Task.WhenAll(task1, task2);
 
             var statusCode1 = task1.Result.StatusCode;

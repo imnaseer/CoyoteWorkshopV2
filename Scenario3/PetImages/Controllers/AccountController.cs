@@ -27,6 +27,12 @@ namespace PetImages.Controllers
         [HttpPost]
         public async Task<ActionResult<Account>> CreateAccountAsync(Account account)
         {
+            var maybeError = ValidateAccount(account);
+            if (maybeError != null)
+            {
+                return this.BadRequest(maybeError);
+            }
+
             var accountItem = account.ToItem();
 
             try
@@ -39,6 +45,75 @@ namespace PetImages.Controllers
             }
 
             return this.Ok(accountItem.ToAccount());
-        }   
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<Account>> GetAccountAsync(string name)
+        {
+            try
+            {
+                var accountItem = await this.CosmosContainer.GetItem<AccountItem>(partitionKey: name, id: name);
+                return this.Ok(accountItem.ToAccount());
+            }
+            catch (DatabaseItemDoesNotExistException)
+            {
+                return this.NotFound();
+            }
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<Account>> DeleteAccountAsync(string name)
+        {
+            try
+            {
+                await this.CosmosContainer.DeleteItem(partitionKey: name, id: name);
+                return this.Ok();
+            }
+            catch (DatabaseItemDoesNotExistException)
+            {
+                return this.NoContent();
+            }
+        }
+
+        /// <summary>
+        /// CreateAccountAsync fixed.
+        /// </summary>
+        public async Task<ActionResult<Account>> CreateAccountAsyncIncorrect(Account account)
+        {
+            var maybeError = ValidateAccount(account);
+            if (maybeError != null)
+            {
+                return this.BadRequest(maybeError);
+            }
+
+            var accountItem = account.ToItem();
+
+            if (await CosmosHelper.DoesItemExist<AccountItem>(
+                this.CosmosContainer,
+                accountItem.PartitionKey,
+                accountItem.Id))
+            {
+                return this.Conflict();
+            }
+
+            var createdAccountItem = await this.CosmosContainer.CreateItem(accountItem);
+
+            return this.Ok(createdAccountItem.ToAccount());
+        }
+
+        private static Error ValidateAccount(Account account)
+        {
+            if (account == null)
+            {
+                return ErrorFactory.ParsingError(nameof(Account));
+            }
+
+            if (string.IsNullOrWhiteSpace(account.Name))
+            {
+                return ErrorFactory.InvalidParameterValueError(nameof(Account.Name), account.Name);
+            }
+
+            return null;
+        }
     }
 }

@@ -43,22 +43,33 @@ namespace PetImagesTest.StorageMocks
             });
         }
 
-        public Task<T> UpsertItem<T>(T item)
+        public Task<T> UpsertItem<T>(T item, string ifMatchEtag = null)
             where T : DbItem
         {
             return Task.Run(() =>
             {
                 var itemCopy = TestHelper.Clone(item);
-                this.State.UpsertItem(this.ContainerName, itemCopy);
+                this.State.UpsertItem(this.ContainerName, itemCopy, ifMatchEtag);
                 return itemCopy;
             });
         }
 
-        public Task DeleteItem(string partitionKey, string id)
+        public Task<T> ReplaceItem<T>(T item, string ifMatchEtag = null)
+            where T : DbItem
         {
             return Task.Run(() =>
             {
-                this.State.DeleteItem(this.ContainerName, partitionKey, id);
+                var itemCopy = TestHelper.Clone(item);
+                this.State.ReplaceItem(this.ContainerName, itemCopy, ifMatchEtag);
+                return itemCopy;
+            });
+        }
+
+        public Task DeleteItem(string partitionKey, string id, string ifMatchEtag = null)
+        {
+            return Task.Run(() =>
+            {
+                this.State.DeleteItem(this.ContainerName, partitionKey, id, ifMatchEtag);
             });
         }
     }

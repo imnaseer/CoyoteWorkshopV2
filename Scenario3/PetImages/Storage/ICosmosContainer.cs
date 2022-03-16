@@ -18,9 +18,12 @@ namespace PetImages.Storage
         public Task<T> GetItem<T>(string partitionKey, string id)
            where T : DbItem;
 
-        public Task<T> UpsertItem<T>(T row)
+        public Task<T> UpsertItem<T>(T row, string ifMatchEtag = null)
             where T : DbItem;
 
-        public Task DeleteItem(string partitionKey, string id);
+        public Task<T> ReplaceItem<T>(T row, string ifMatchEtag = null)
+            where T : DbItem;
+
+        public Task DeleteItem(string partitionKey, string id, string ifMatchEtag = null);
     }
 }
