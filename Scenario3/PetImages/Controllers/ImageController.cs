@@ -88,6 +88,7 @@ namespace PetImages.Controllers
         /// <summary>
         /// ...
         /// </summary>
+        [NonAction]
         public async Task<ActionResult<ImageRecord>> CreateImageRecordThirdScenarioBuggyAsync(string accountName, ImageRecord imageRecord)
         {
             var maybeError = await ValidateImageRecordAsync(accountName, imageRecord);
@@ -145,6 +146,7 @@ namespace PetImages.Controllers
         /// <summary>
         /// ...
         /// </summary>
+        [NonAction]
         public async Task<ActionResult<ImageRecord>> CreateImageRecordThirdScenarioFixedAsync(string accountName, ImageRecord imageRecord)
         {
             var maybeError = await ValidateImageRecordAsync(accountName, imageRecord);
@@ -204,6 +206,7 @@ namespace PetImages.Controllers
         /// <summary>
         /// ...
         /// </summary>
+        [NonAction]
         public async Task<ActionResult<ImageRecord>> CreateImageRecordFourthScenarioAsync(string accountName, ImageRecord imageRecord)
         {
             var maybeError = await ValidateImageRecordAsync(accountName, imageRecord);
@@ -266,6 +269,8 @@ namespace PetImages.Controllers
             return this.Ok(imageRecordItem.ToImageRecord());
         }
 
+        [HttpGet]
+
         public async Task<ActionResult<ImageRecord>> GetImageRecord(string accountName, string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);
@@ -285,6 +290,7 @@ namespace PetImages.Controllers
             }
         }
 
+        [HttpDelete]
         public async Task<ActionResult> DeleteImageRecord(string accountName, string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);
@@ -308,7 +314,8 @@ namespace PetImages.Controllers
             }
         }
 
-        [HttpGet]
+        // TODO: Fix this, its an action
+        [NonAction]
         public async Task<ActionResult<byte[]>> GetImageContentsAsync(string accountName, string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);

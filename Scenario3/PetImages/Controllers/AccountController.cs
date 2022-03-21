@@ -61,7 +61,7 @@ namespace PetImages.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpDelete]
         public async Task<ActionResult<Account>> DeleteAccountAsync(string name)
         {
             try
@@ -78,6 +78,7 @@ namespace PetImages.Controllers
         /// <summary>
         /// CreateAccountAsync fixed.
         /// </summary>
+        [NonAction]
         public async Task<ActionResult<Account>> CreateAccountAsyncIncorrect(Account account)
         {
             var maybeError = ValidateAccount(account);
