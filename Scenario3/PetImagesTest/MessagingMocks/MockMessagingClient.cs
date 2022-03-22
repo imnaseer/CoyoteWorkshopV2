@@ -14,9 +14,9 @@ namespace PetImagesTest.MessagingMocks
     {
         private readonly IWorker GenerateThumbnailWorker;
 
-        public MockMessagingClient(IBlobContainer blobContainer)
+        public MockMessagingClient(ICosmosContainer accountContainer, ICosmosContainer imageContainer, IStorageAccount blobContainer)
         {
-            this.GenerateThumbnailWorker = new GenerateThumbnailWorker(blobContainer);
+            this.GenerateThumbnailWorker = new GenerateThumbnailWorker(accountContainer, imageContainer, blobContainer);
         }
 
         public Task SubmitMessage(Message message)
