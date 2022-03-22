@@ -11,6 +11,7 @@ using PetImages.Storage;
 using PetImagesTest.Exceptions;
 using PetImages.RetryFramework;
 using Polly;
+using PetImages.Messaging;
 
 namespace PetImagesTest.Clients
 {
@@ -19,6 +20,7 @@ namespace PetImagesTest.Clients
         private readonly ICosmosContainer AccountContainer;
         private readonly ICosmosContainer ImageContainer;
         private readonly IStorageAccount BlobContainer;
+        private readonly IMessagingClient MessagingClient;
         private readonly IAsyncPolicy AsyncPolicy;
 
         public TestPetImagesClient(ICosmosContainer accountContainer)
@@ -33,6 +35,14 @@ namespace PetImagesTest.Clients
             this.ImageContainer = imageContainer;
             this.BlobContainer = blobContainer;
             this.AsyncPolicy = RetryPolicyFactory.GetAsyncRetryExponential();
+        }
+
+        public TestPetImagesClient(ICosmosContainer accountContainer, ICosmosContainer imageContainer, IStorageAccount blobContainer, IMessagingClient messagingClient)
+        {
+            this.AccountContainer = accountContainer;
+            this.ImageContainer = imageContainer;
+            this.BlobContainer = blobContainer;
+            this.MessagingClient = messagingClient;
         }
 
         public async Task<ServiceResponse<Account>> CreateAccountAsync(Account account)
@@ -54,8 +64,8 @@ namespace PetImagesTest.Clients
 
             return await this.AsyncPolicy.ExecuteAsync(async () =>
             {
-                var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer);
-                var actionResult = await InvokeControllerAction(async () => await controller.CreateImageRecordAsync(accountName, imageCopy));
+                var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
+                var actionResult = await InvokeControllerAction(async () => await controller.CreateImageRecordSecondScenarioAsync(accountName, imageCopy));
                 return ExtractServiceResponse<ImageRecord>(actionResult.Result);
             });
         }
@@ -64,7 +74,7 @@ namespace PetImagesTest.Clients
         {
             return await this.AsyncPolicy.ExecuteAsync(async () =>
             {
-                var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer);
+                var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
                 var actionResult = await InvokeControllerAction(async () => await controller.GetImageContentsAsync(accountName, imageName));
                 return ExtractServiceResponse<byte[]>(actionResult.Result);
             });
