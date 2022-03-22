@@ -12,6 +12,7 @@ using PetImagesTest.Exceptions;
 
 namespace PetImagesTest.Clients
 {
+    // TODO(mitsha): Add Polly Retry Capabilities here! !IMPORTANT
     public class TestPetImagesClient : IPetImagesClient
     {
         private readonly ICosmosContainer AccountContainer;

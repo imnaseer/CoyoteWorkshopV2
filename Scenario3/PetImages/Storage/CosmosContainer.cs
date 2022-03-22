@@ -39,6 +39,7 @@ namespace PetImages.Storage
 
         public async Task<T> GetItem<T>(string partitionKey, string id) where T : DbItem
         {
+            // TODO: This throws an exception instead of providing a response with 404.
             var response = await this.cosmosContainer.ReadItemAsync<T>(id, new PartitionKey(partitionKey));
             
             if (response.StatusCode == HttpStatusCode.NotFound)

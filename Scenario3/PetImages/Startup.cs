@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using PetImages.Storage;
 using Swashbuckle.AspNetCore;
 
 namespace PetImages
@@ -34,6 +35,8 @@ namespace PetImages
                     Description = "Description for the API goes here.",
                 });
             });
+
+            this.InitializeCosmosServices(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -62,6 +65,13 @@ namespace PetImages
             {
                 endpoints.MapControllers();
             });
+        }
+
+        private void InitializeCosmosServices(IServiceCollection services)
+        {
+            var cosmosDatabase = CosmosDatabase.Create(Constants.DatabaseName);
+            var cosmosContainer = cosmosDatabase.CreateContainerAsync(Constants.AccountContainerName).Result;
+            services.AddSingleton(cosmosContainer);
         }
     }
 }

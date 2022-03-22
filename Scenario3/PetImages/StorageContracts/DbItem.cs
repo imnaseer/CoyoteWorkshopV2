@@ -1,18 +1,19 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace PetImages.Entities
 {
     public abstract class DbItem
     {
-        [JsonPropertyName("id")]
+        [JsonProperty(PropertyName = "id")]
         public string Id { get; set; }
 
+        [JsonProperty(PropertyName = "partitionKey")]
         public abstract string PartitionKey { get; }
 
-        [JsonPropertyName("_etag")]
+        [JsonProperty(PropertyName = "_etag")]
         public string ETag { get; set; }
     }
 }
