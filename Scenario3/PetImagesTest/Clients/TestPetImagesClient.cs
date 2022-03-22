@@ -9,19 +9,22 @@ using PetImages.Contracts;
 using PetImages.Controllers;
 using PetImages.Storage;
 using PetImagesTest.Exceptions;
+using PetImages.RetryFramework;
+using Polly;
 
 namespace PetImagesTest.Clients
 {
-    // TODO(mitsha): Add Polly Retry Capabilities here! !IMPORTANT
     public class TestPetImagesClient : IPetImagesClient
     {
         private readonly ICosmosContainer AccountContainer;
         private readonly ICosmosContainer ImageContainer;
         private readonly IStorageAccount BlobContainer;
+        private readonly IAsyncPolicy AsyncPolicy;
 
         public TestPetImagesClient(ICosmosContainer accountContainer)
         {
             this.AccountContainer = accountContainer;
+            this.AsyncPolicy = RetryPolicyFactory.GetAsyncRetryExponential();
         }
 
         public TestPetImagesClient(ICosmosContainer accountContainer, ICosmosContainer imageContainer, IStorageAccount blobContainer)
@@ -29,13 +32,15 @@ namespace PetImagesTest.Clients
             this.AccountContainer = accountContainer;
             this.ImageContainer = imageContainer;
             this.BlobContainer = blobContainer;
+            this.AsyncPolicy = RetryPolicyFactory.GetAsyncRetryExponential();
         }
 
         public async Task<ServiceResponse<Account>> CreateAccountAsync(Account account)
         {
             var accountCopy = TestHelper.Clone(account);
 
-            return await Task.Run(async () =>
+            // TODO: Is this alright vs Task.Run()?
+            return await this.AsyncPolicy.ExecuteAsync(async () =>
             {
                 var controller = new AccountController(this.AccountContainer);
                 var actionResult = await InvokeControllerAction(async () => await controller.CreateAccountAsync(accountCopy));
@@ -47,7 +52,7 @@ namespace PetImagesTest.Clients
         {
             var imageCopy = TestHelper.Clone(image);
 
-            return await Task.Run(async () =>
+            return await this.AsyncPolicy.ExecuteAsync(async () =>
             {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer);
                 var actionResult = await InvokeControllerAction(async () => await controller.CreateImageRecordAsync(accountName, imageCopy));
@@ -57,7 +62,7 @@ namespace PetImagesTest.Clients
 
         public async Task<ServiceResponse<byte[]>> GetImageAsync(string accountName, string imageName)
         {
-            return await Task.Run(async () =>
+            return await this.AsyncPolicy.ExecuteAsync(async () =>
             {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer);
                 var actionResult = await InvokeControllerAction(async () => await controller.GetImageContentsAsync(accountName, imageName));
