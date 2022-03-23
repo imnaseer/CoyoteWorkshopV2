@@ -21,7 +21,7 @@ Function Get-TimeStamp {
     return "[{0:MM/dd/yy} {0:HH:mm:ss}]" -f (Get-Date)
 }
 
-Function InstallCosmosEmulator {
+Function Install-CosmosEmulator {
     Write-Output "Checking whether Azure Cosmos Emulator installed on this machine."
     Write-Output ""
 
@@ -58,7 +58,7 @@ Function InstallCosmosEmulator {
     }
 }
 
-Function InstallAzureStorageEmulator {
+Function Install-AzureStorageEmulator {
     Write-Output "Checking whether Azure Storage Emulator installed on this machine."
     Write-Output ""
 
@@ -97,6 +97,48 @@ Function InstallAzureStorageEmulator {
 
 Confirm-Administrator
 
-InstallCosmosEmulator
+Install-CosmosEmulator
 
-InstallAzureStorageEmulator
+Install-AzureStorageEmulator
+
+Write-Host "Initialization completed."
+Write-Host "Optionally run `Install-AzureStorageExplorer` to install Azure Storage Explorer."
+
+# Utility Functions
+
+Function global:Install-AzureStorageExplorer {
+    Write-Output "Checking whether Azure Storage Explorer installed on this machine."
+    Write-Output ""
+
+    $exeFolder = $env:LOCALAPPDATA + "\Programs\Microsoft Azure Storage Explorer"
+    $exePath = $exeFolder + "\StorageExplorer.exe"
+
+    # Install the Azure Storage explorer if not installed
+    if (-not (Test-Path "$exePath")) {
+
+        $downloadPath = $ENV:TEMP + "\CoyoteWorkshopDev\"
+        $exe = $downloadPath + "StorageExplorer.exe"
+        $downloadLink = "https://go.microsoft.com/fwlink/?LinkId=708343&clcid=0x409"
+
+        New-Item -ItemType Directory -Force -Path $downloadPath
+
+        if (-not (Test-Path "$exe")) {
+            Write-Host "$(Get-TimeStamp) Downloading $downloadLink in folder $exe."
+            Invoke-WebRequest $downloadLink -OutFile $exe;
+        }
+
+        Write-Host "$(Get-TimeStamp) Installing Azure Storage Explorer..."
+        Start-Process $exe -Wait -ArgumentList "/verysilent /norestart /currentuser"
+
+        if (-not (Test-Path $exePath)) {
+            throw "Azure Storage Explorer installation failed"
+        }
+
+        Write-Host "$(Get-TimeStamp) Deleting the installer package"
+        Remove-Item -Path $downloadPath -Recurse
+    }
+    else {
+        Write-Output "Found Azure Storage Explorer Installed in $exeFolder"
+        Write-Output ""
+    }
+}
