@@ -22,8 +22,8 @@ namespace PetImages.Controllers
         private readonly IMessagingClient MessagingClient;
 
         public ImageController(
-            ICosmosContainer accountContainer,
-            ICosmosContainer imageRecordContainer,
+            IAccountContainer accountContainer,
+            IImageContainer imageRecordContainer,
             IStorageAccount storageAccount,
             IMessagingClient messagingClient)
         {

@@ -17,8 +17,8 @@ namespace PetImages.Worker
         private readonly IStorageAccount StorageAccount;
 
         public GenerateThumbnailWorker(
-            ICosmosContainer accountContainer,
-            ICosmosContainer imageRecordContainer,
+            IAccountContainer accountContainer,
+            IImageContainer imageRecordContainer,
             IStorageAccount storageAccount)
         {
             this.AccountContainer = accountContainer;

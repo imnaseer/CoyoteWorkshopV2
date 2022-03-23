@@ -9,7 +9,7 @@ using PetImages.Exceptions;
 
 namespace PetImages.Storage
 {
-    public class CosmosContainer : ICosmosContainer
+    public class CosmosContainer : ICosmosContainer, IImageContainer, IAccountContainer
     {
         private readonly Container cosmosContainer;
 

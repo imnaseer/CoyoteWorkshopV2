@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using PetImages.Messaging;
 using PetImages.Storage;
 using Swashbuckle.AspNetCore;
 
@@ -37,6 +38,8 @@ namespace PetImages
             });
 
             this.InitializeCosmosServices(services);
+            this.InitializeStorageServices(services);
+            this.InitializeQueueServices(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -70,8 +73,24 @@ namespace PetImages
         private void InitializeCosmosServices(IServiceCollection services)
         {
             var cosmosDatabase = CosmosDatabase.Create(Constants.DatabaseName);
-            var cosmosContainer = cosmosDatabase.CreateContainerAsync(Constants.AccountContainerName).Result;
-            services.AddSingleton(cosmosContainer);
+            var accountCosmosContainer = cosmosDatabase.CreateContainerAsync(Constants.AccountContainerName).Result;
+            services.AddSingleton((IAccountContainer)accountCosmosContainer);
+            var imageCosmosContainer = cosmosDatabase.CreateContainerAsync(Constants.ImageContainerName).Result;
+            services.AddSingleton((IImageContainer)imageCosmosContainer);
+        }
+
+        private void InitializeStorageServices(IServiceCollection services)
+        {
+            var storageAccount = new AzureStorageAccount();
+            services.AddSingleton<IStorageAccount>(storageAccount);
+        }
+
+        private void InitializeQueueServices(IServiceCollection services)
+        {
+            var messagingClient = new StorageMessagingClient(Constants.ThumbnailQueueName);
+            services.AddSingleton<IMessagingClient>(messagingClient);
+            var messageReceiverClient = new StorageMessageReceiverClient(Constants.ThumbnailQueueName);
+            services.AddSingleton<IMessageReceiver>(messageReceiverClient);
         }
     }
 }

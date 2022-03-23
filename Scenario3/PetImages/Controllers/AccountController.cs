@@ -1,11 +1,13 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
 using PetImages.Entities;
 using PetImages.Exceptions;
+using PetImages.Messaging;
 using PetImages.Storage;
 
 namespace PetImages.Controllers
@@ -16,7 +18,7 @@ namespace PetImages.Controllers
     {
         private readonly ICosmosContainer CosmosContainer;
 
-        public AccountController(ICosmosContainer cosmosDb)
+        public AccountController(IAccountContainer cosmosDb)
         {
             this.CosmosContainer = cosmosDb;
         }
@@ -73,6 +75,28 @@ namespace PetImages.Controllers
             {
                 return this.NoContent();
             }
+        }
+
+        [HttpGet]
+        [Route("testRouteForMessageSend")]
+        public async Task<ActionResult> SendRandomMessageToQueue([FromServices] IMessagingClient messagingClient)
+        {
+            var thumbnailMessage = new GenerateThumbnailMessage()
+            {
+                AccountName = $"Mitesh_{Guid.NewGuid()}",
+                ImageName = $"Image_{Guid.NewGuid()}",
+            };
+
+            await messagingClient.SubmitMessage(thumbnailMessage);
+            return this.Ok();
+        }
+
+        [HttpGet]
+        [Route("testRouteForMessageReceive")]
+        public async Task<ActionResult> ReceiveRandomMessageToQueue([FromServices] IMessageReceiver messagingClient)
+        {
+            var message = await messagingClient.ReadMessage();
+            return this.Ok(message);
         }
 
         /// <summary>
