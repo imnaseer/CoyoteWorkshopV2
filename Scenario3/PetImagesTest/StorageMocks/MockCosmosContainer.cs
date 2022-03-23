@@ -7,7 +7,7 @@ using PetImages.Storage;
 
 namespace PetImagesTest.StorageMocks
 {
-    public class MockCosmosContainer : ICosmosContainer
+    public class MockCosmosContainer : ICosmosContainer, IAccountContainer, IImageContainer
     {
         private readonly string ContainerName;
         private readonly MockCosmosState State;

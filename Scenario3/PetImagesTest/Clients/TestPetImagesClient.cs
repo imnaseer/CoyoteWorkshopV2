@@ -17,19 +17,19 @@ namespace PetImagesTest.Clients
 {
     public class TestPetImagesClient : IPetImagesClient
     {
-        private readonly ICosmosContainer AccountContainer;
-        private readonly ICosmosContainer ImageContainer;
+        private readonly IAccountContainer AccountContainer;
+        private readonly IImageContainer ImageContainer;
         private readonly IStorageAccount BlobContainer;
         private readonly IMessagingClient MessagingClient;
         private readonly IAsyncPolicy AsyncPolicy;
 
-        public TestPetImagesClient(ICosmosContainer accountContainer)
+        public TestPetImagesClient(IAccountContainer accountContainer)
         {
             this.AccountContainer = accountContainer;
             this.AsyncPolicy = RetryPolicyFactory.GetAsyncRetryExponential();
         }
 
-        public TestPetImagesClient(ICosmosContainer accountContainer, ICosmosContainer imageContainer, IStorageAccount blobContainer)
+        public TestPetImagesClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer)
         {
             this.AccountContainer = accountContainer;
             this.ImageContainer = imageContainer;
@@ -37,7 +37,7 @@ namespace PetImagesTest.Clients
             this.AsyncPolicy = RetryPolicyFactory.GetAsyncRetryExponential();
         }
 
-        public TestPetImagesClient(ICosmosContainer accountContainer, ICosmosContainer imageContainer, IStorageAccount blobContainer, IMessagingClient messagingClient)
+        public TestPetImagesClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer, IMessagingClient messagingClient)
         {
             this.AccountContainer = accountContainer;
             this.ImageContainer = imageContainer;

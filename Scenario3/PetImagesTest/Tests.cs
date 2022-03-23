@@ -12,6 +12,7 @@ using Microsoft.Coyote.SystematicTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PetImages;
 using PetImages.Contracts;
+using PetImages.Storage;
 using PetImagesTest.Clients;
 using PetImagesTest.StorageMocks;
 
@@ -27,7 +28,7 @@ namespace PetImagesTest
             var cosmosState = new MockCosmosState();
             var database = new MockCosmosDatabase(cosmosState);
             var accountContainer = await database.CreateContainerAsync(Constants.AccountContainerName);
-            var petImagesClient = new TestPetImagesClient(accountContainer);
+            var petImagesClient = new TestPetImagesClient((IAccountContainer)accountContainer);
 
             // Create an account request payload
             var account = new Account()
@@ -63,7 +64,7 @@ namespace PetImagesTest
             var imageContainer = (MockCosmosContainer)await database.CreateContainerAsync(Constants.ImageContainerName);
             var blobContainer = new MockStorageAccount();
 
-            var petImagesClient = new TestPetImagesClient(accountContainer, imageContainer, blobContainer);
+            var petImagesClient = new TestPetImagesClient((IAccountContainer)accountContainer, (IImageContainer)imageContainer, blobContainer);
 
             string accountName = "MyAccount";
             string imageName = "pet.jpg";
