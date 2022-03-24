@@ -77,28 +77,6 @@ namespace PetImages.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("testRouteForMessageSend")]
-        public async Task<ActionResult> SendRandomMessageToQueue([FromServices] IMessagingClient messagingClient)
-        {
-            var thumbnailMessage = new GenerateThumbnailMessage()
-            {
-                AccountName = $"Mitesh_{Guid.NewGuid()}",
-                ImageName = $"Image_{Guid.NewGuid()}",
-            };
-
-            await messagingClient.SubmitMessage(thumbnailMessage);
-            return this.Ok();
-        }
-
-        [HttpGet]
-        [Route("testRouteForMessageReceive")]
-        public async Task<ActionResult> ReceiveRandomMessageToQueue([FromServices] IMessageReceiver messagingClient)
-        {
-            var message = await messagingClient.ReadMessage();
-            return this.Ok(message);
-        }
-
         /// <summary>
         /// CreateAccountAsync fixed.
         /// </summary>
