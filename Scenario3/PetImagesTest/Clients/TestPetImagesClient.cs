@@ -49,25 +49,24 @@ namespace PetImagesTest.Clients
         {
             var accountCopy = TestHelper.Clone(account);
 
-            // TODO: Is this alright vs Task.Run()?
-            return await this.AsyncPolicy.ExecuteAsync(async () =>
-            {
+            return await this.AsyncPolicy.ExecuteAsync(() =>
+            Task.Run(async () => {
                 var controller = new AccountController(this.AccountContainer);
                 var actionResult = await InvokeControllerAction(async () => await controller.CreateAccountAsync(accountCopy));
                 return ExtractServiceResponse<Account>(actionResult.Result);
-            });
+            }));
         }
 
         public async Task<ServiceResponse<ImageRecord>> CreateImageAsync(string accountName, ImageRecord image)
         {
             var imageCopy = TestHelper.Clone(image);
 
-            return await this.AsyncPolicy.ExecuteAsync(async () =>
-            {
+            return await this.AsyncPolicy.ExecuteAsync(() =>
+            Task.Run(async () => {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
                 var actionResult = await InvokeControllerAction(async () => await controller.CreateImageRecordSecondScenarioAsync(accountName, imageCopy));
                 return ExtractServiceResponse<ImageRecord>(actionResult.Result);
-            });
+            }));
         }
 
         public async Task<ServiceResponse<byte[]>> GetImageAsync(string accountName, string imageName)
