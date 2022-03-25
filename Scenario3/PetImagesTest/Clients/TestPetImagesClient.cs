@@ -21,20 +21,15 @@ namespace PetImagesTest.Clients
         private readonly IImageContainer ImageContainer;
         private readonly IStorageAccount BlobContainer;
         private readonly IMessagingClient MessagingClient;
-        private readonly IAsyncPolicy AsyncPolicy;
 
         public TestPetImagesClient(IAccountContainer accountContainer)
+            : this(accountContainer, null, null, null)
         {
-            this.AccountContainer = accountContainer;
-            this.AsyncPolicy = RetryPolicyFactory.GetAsyncRetryExponential();
         }
 
         public TestPetImagesClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer)
+            : this(accountContainer, imageContainer, blobContainer, null)
         {
-            this.AccountContainer = accountContainer;
-            this.ImageContainer = imageContainer;
-            this.BlobContainer = blobContainer;
-            this.AsyncPolicy = RetryPolicyFactory.GetAsyncRetryExponential();
         }
 
         public TestPetImagesClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer, IMessagingClient messagingClient)
@@ -49,29 +44,29 @@ namespace PetImagesTest.Clients
         {
             var accountCopy = TestHelper.Clone(account);
 
-            return await this.AsyncPolicy.ExecuteAsync(() =>
-            Task.Run(async () => {
+            
+            return await Task.Run(async () => 
+            {
                 var controller = new AccountController(this.AccountContainer);
                 var actionResult = await InvokeControllerAction(async () => await controller.CreateAccountAsync(accountCopy));
                 return ExtractServiceResponse<Account>(actionResult.Result);
-            }));
+            });
         }
 
         public async Task<ServiceResponse<ImageRecord>> CreateImageAsync(string accountName, ImageRecord image)
         {
             var imageCopy = TestHelper.Clone(image);
 
-            return await this.AsyncPolicy.ExecuteAsync(() =>
-            Task.Run(async () => {
+            return await Task.Run(async () => {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
                 var actionResult = await InvokeControllerAction(async () => await controller.CreateImageRecordSecondScenarioAsync(accountName, imageCopy));
                 return ExtractServiceResponse<ImageRecord>(actionResult.Result);
-            }));
+            });
         }
 
         public async Task<ServiceResponse<byte[]>> GetImageAsync(string accountName, string imageName)
         {
-            return await this.AsyncPolicy.ExecuteAsync(async () =>
+            return await Task.Run(async () =>
             {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
                 var actionResult = await InvokeControllerAction(async () => await controller.GetImageContentsAsync(accountName, imageName));
