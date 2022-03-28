@@ -18,11 +18,14 @@ namespace PetImages.Worker
 
         private readonly IMessageReceiver MessageReceiver;
 
-        public Worker(ILogger<Worker> logger, IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount storageAccount, IMessageReceiver messageReceiver)
+        private readonly IMessagingClient MessagingClient;
+
+        public Worker(ILogger<Worker> logger, IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount storageAccount, IMessageReceiver messageReceiver, IMessagingClient messagingClient)
         {
             _logger = logger;
             this.GenerateThumbnailWorker = new GenerateThumbnailWorker(accountContainer, imageContainer, storageAccount);
             this.MessageReceiver = messageReceiver;
+            this.MessagingClient = messagingClient;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -38,7 +41,23 @@ namespace PetImages.Worker
                         {
                             var thumbnailImageMessage = (GenerateThumbnailMessage)nextMessage;
                             _logger.LogInformation($"Processing Generate Thumbnail Message for {thumbnailImageMessage.AccountName} account's {thumbnailImageMessage.ImageName} image.");
-                            await this.GenerateThumbnailWorker.ProcessMessage(thumbnailImageMessage);
+                            var workerResult = await this.GenerateThumbnailWorker.ProcessMessage(thumbnailImageMessage);
+                            
+                            switch(workerResult.ResultCode)
+                            {
+                                case Messaging.Worker.WorkerResultCode.Enabled:
+                                    // Requeue the message for retry
+                                    _logger.LogInformation("Requeued Worker Job");
+                                    await this.MessagingClient.SubmitMessage(nextMessage);
+                                    await Task.Delay(10000); // Wait before processing next message?
+                                    break;
+                                case Messaging.Worker.WorkerResultCode.Completed:
+                                    _logger.LogInformation("Generated thumbnail successfully");
+                                    break;
+                                case Messaging.Worker.WorkerResultCode.Faulted:
+                                    _logger.LogError($"Failed to generate thumbnail, reason: {workerResult.Message}");
+                                    break;
+                            }
                         }
                         catch (Exception ex)
                         {

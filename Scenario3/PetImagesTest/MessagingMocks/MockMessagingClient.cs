@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Coyote.Specifications;
 using PetImages.Messaging;
+using PetImages.Messaging.Worker;
 using PetImages.Storage;
 using PetImages.Worker;
 
@@ -29,7 +30,7 @@ namespace PetImagesTest.MessagingMocks
                     if (message.Type == Message.GenerateThumbnailMessageType)
                     {
                         var clonedMessage = TestHelper.Clone((GenerateThumbnailMessage)message);
-                        await this.GenerateThumbnailWorker.ProcessMessage(clonedMessage);
+                        var workerResult = await this.RunThumbnailWorkerWithRetry(clonedMessage);
                     }
                     else
                     {
@@ -43,6 +44,18 @@ namespace PetImagesTest.MessagingMocks
             });
 
             return Task.CompletedTask;
+        }
+
+        private async Task<WorkerResult> RunThumbnailWorkerWithRetry(GenerateThumbnailMessage message)
+        {
+            WorkerResult workerResult;
+            do
+            {
+                workerResult = await this.GenerateThumbnailWorker.ProcessMessage(message);
+            }
+            while(workerResult == null || workerResult.ResultCode == WorkerResultCode.Enabled);
+
+            return workerResult;
         }
     }
 }

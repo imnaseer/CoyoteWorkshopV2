@@ -9,8 +9,6 @@ using PetImages.Contracts;
 using PetImages.Controllers;
 using PetImages.Storage;
 using PetImagesTest.Exceptions;
-using PetImages.RetryFramework;
-using Polly;
 using PetImages.Messaging;
 
 namespace PetImagesTest.Clients

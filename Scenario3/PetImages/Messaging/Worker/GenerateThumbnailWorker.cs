@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using PetImages.Contracts;
 using PetImages.Entities;
 using PetImages.Messaging;
+using PetImages.Messaging.Worker;
 using PetImages.Storage;
 
 namespace PetImages.Worker
@@ -26,7 +27,7 @@ namespace PetImages.Worker
             this.StorageAccount = storageAccount;
         }
 
-        public async Task ProcessMessage(Message message)
+        public async Task<WorkerResult> ProcessMessage(Message message)
         {
             var thumbnailMessage = (GenerateThumbnailMessage)message;
 
@@ -40,13 +41,21 @@ namespace PetImages.Worker
 
             if (maybeImageRecordItem == null)
             {
-                // retry?
+                return new WorkerResult
+                {
+                    ResultCode = WorkerResultCode.Enabled,
+                    Message = "Needs Retry",
+                };
             }
 
             var maybeImageBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, maybeImageRecordItem.BlobName);
             if (maybeImageBytes == null)
             {
-                // ???
+                return new WorkerResult
+                {
+                    ResultCode = WorkerResultCode.Faulted,
+                    Message = "Worker Faulted",
+                };
             }
 
             var thumbnailBytes = GenerateThumbnail(maybeImageBytes);
@@ -56,6 +65,11 @@ namespace PetImages.Worker
             maybeImageRecordItem.ThumbnailBlobName = thumbnailBlobName;
             maybeImageRecordItem.State = ImageRecordState.Created.ToString();
             await this.ImageRecordContainer.ReplaceItem(maybeImageRecordItem, ifMatchEtag: maybeImageRecordItem.ETag);
+            return new WorkerResult
+            {
+                ResultCode = WorkerResultCode.Completed,
+                Message = "Job completed",
+            };
         }
 
         /// <summary>

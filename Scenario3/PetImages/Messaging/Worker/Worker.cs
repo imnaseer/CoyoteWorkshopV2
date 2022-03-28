@@ -3,11 +3,12 @@
 
 using System.Threading.Tasks;
 using PetImages.Messaging;
+using PetImages.Messaging.Worker;
 
 namespace PetImages.Worker
 {
     public interface IWorker
     {
-        Task ProcessMessage(Message message);
+        Task<WorkerResult> ProcessMessage(Message message);
     }
 }

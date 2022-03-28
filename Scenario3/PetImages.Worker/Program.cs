@@ -29,7 +29,7 @@ namespace PetImages.Worker
                     services.AddSingleton((IImageContainer) imageContainer);
                     services.AddSingleton<IStorageAccount>(storageAccount);
                     services.AddSingleton<IMessageReceiver>(_ => new StorageMessageReceiverClient(Constants.ThumbnailQueueName));
-                    
+                    services.AddSingleton<IMessagingClient>(_ => new StorageMessagingClient(Constants.ThumbnailQueueName));
                     services.AddHostedService<Worker>();
                 });
     }
