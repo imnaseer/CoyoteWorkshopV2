@@ -44,7 +44,7 @@ namespace PetImages.Worker
                 return new WorkerResult
                 {
                     ResultCode = WorkerResultCode.Enabled,
-                    Message = "Needs Retry",
+                    Message = "Needs Retry.",
                 };
             }
 
@@ -54,7 +54,7 @@ namespace PetImages.Worker
                 return new WorkerResult
                 {
                     ResultCode = WorkerResultCode.Faulted,
-                    Message = "Worker Faulted",
+                    Message = "Worker Faulted. Blob not found",
                 };
             }
 
@@ -68,7 +68,7 @@ namespace PetImages.Worker
             return new WorkerResult
             {
                 ResultCode = WorkerResultCode.Completed,
-                Message = "Job completed",
+                Message = "Thumbnail Generated.",
             };
         }
 
