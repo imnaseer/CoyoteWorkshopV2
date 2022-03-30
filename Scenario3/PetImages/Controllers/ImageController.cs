@@ -37,7 +37,9 @@ namespace PetImages.Controllers
         /// ...
         /// </summary>
         [HttpPost]
-        public async Task<ActionResult<ImageRecord>> CreateImageRecordSecondScenarioAsync(string accountName, ImageRecord imageRecord)
+        public async Task<ActionResult<ImageRecord>> CreateImageRecordSecondScenarioAsync(
+            [FromQuery] string accountName,
+            [FromBody] ImageRecord imageRecord)
         {
             var maybeError = await ValidateImageRecordAsync(accountName, imageRecord);
             if (maybeError != null)
@@ -271,7 +273,9 @@ namespace PetImages.Controllers
 
         [HttpGet]
 
-        public async Task<ActionResult<ImageRecord>> GetImageRecord(string accountName, string imageName)
+        public async Task<ActionResult<ImageRecord>> GetImageRecord(
+            [FromQuery] string accountName,
+            [FromQuery] string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);
             if (maybeError != null)
@@ -315,8 +319,10 @@ namespace PetImages.Controllers
         }
 
         // TODO: Fix this, its an action
-        [NonAction]
-        public async Task<ActionResult<byte[]>> GetImageContentsAsync(string accountName, string imageName)
+        [HttpGet("/contents")]
+        public async Task<ActionResult<byte[]>> GetImageContentsAsync(
+            [FromQuery] string accountName,
+            [FromQuery] string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);
             if (maybeError != null)
@@ -328,6 +334,35 @@ namespace PetImages.Controllers
             {
                 var imageRecordItem = await this.ImageRecordContainer.GetItem<ImageRecordItem>(partitionKey: imageName, id: imageName);
                 var maybeBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, imageRecordItem.BlobName);
+
+                if (maybeBytes == null)
+                {
+                    return this.NotFound();
+                }
+
+                return this.Ok(maybeBytes);
+            }
+            catch (DatabaseItemDoesNotExistException)
+            {
+                return this.NotFound();
+            }
+        }
+
+        [HttpGet("/thumbnail")]
+        public async Task<ActionResult<byte[]>> GetImageThumbailAsync(
+            [FromQuery] string accountName,
+            [FromQuery] string imageName)
+        {
+            var maybeError = await ValidateAccountAsync(accountName);
+            if (maybeError != null)
+            {
+                return this.BadRequest(maybeError);
+            }
+
+            try
+            {
+                var imageRecordItem = await this.ImageRecordContainer.GetItem<ImageRecordItem>(partitionKey: imageName, id: imageName);
+                var maybeBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, imageRecordItem.ThumbnailBlobName);
 
                 if (maybeBytes == null)
                 {

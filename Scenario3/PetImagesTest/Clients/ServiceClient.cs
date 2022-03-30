@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,6 +17,13 @@ namespace PetImagesTest.Clients
     {
         private readonly HttpClient Client;
 
+        // TODO: Need to fix routes and then write the client
+        // TODO: To use the factory, in the tests, do this:
+        // using var factory = new ServiceFactory();
+        // await factory.InitializeAccountContainerAsync();
+        // await factory.InitializeImageContainerAsync();
+        // factory.InitializeMessagingClient();
+        // using var client = new ServiceClient(factory);
         internal ServiceClient(ServiceFactory factory)
         {
             this.Client = factory.CreateClient(new WebApplicationFactoryClientOptions()
@@ -25,16 +33,11 @@ namespace PetImagesTest.Clients
             });
         }
 
-        public Task<HttpStatusCode> CreateAccountAsync(Account account)
+        public async Task<HttpStatusCode> CreateAccountAsync(Account account)
         {
-            // TODO: Need to fix routes and then write the client
-            // TODO: To use the factory, in the tests, do this:
-            // using var factory = new ServiceFactory();
-            // await factory.InitializeAccountContainerAsync();
-            // await factory.InitializeImageContainerAsync();
-            // factory.InitializeMessagingClient();
-            // using var client = new ServiceClient(factory);
-            throw new NotImplementedException();
+            var response = await this.Client.PostAsync(new Uri($"Account", UriKind.RelativeOrAbsolute),
+                JsonContent.Create(account));
+            return response.StatusCode;
         }
 
         public Task<HttpStatusCode> CreateImageAsync(string accountName, ImageRecord image)
@@ -53,6 +56,21 @@ namespace PetImagesTest.Clients
         }
 
         public Task<(HttpStatusCode, byte[])> GetImageThumbnailAsync(string accountName, string imageName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpStatusCode> DeleteAccountAsync(string accountName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<HttpStatusCode> DeleteAsync(string accountName, string imageName)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<(HttpStatusCode, Account)> GetAccountAsync(string accountName)
         {
             throw new NotImplementedException();
         }
