@@ -1,14 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc.Testing;
 using PetImages;
 using PetImages.Contracts;
-using PetImages.Tests;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace PetImagesTest.Clients

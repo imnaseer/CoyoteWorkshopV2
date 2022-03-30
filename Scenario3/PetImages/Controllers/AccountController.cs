@@ -27,7 +27,6 @@ namespace PetImages.Controllers
         /// CreateAccountAsync fixed.
         /// </summary>
         [HttpPost]
-        [NonAction]
         public async Task<ActionResult<Account>> CreateAccountAsync(Account account)
         {
             var maybeError = ValidateAccount(account);
@@ -82,6 +81,7 @@ namespace PetImages.Controllers
         /// CreateAccountAsync fixed.
         /// </summary>
         [HttpPost]
+        [NonAction]
         public async Task<ActionResult<Account>> CreateAccountAsyncIncorrect(Account account)
         {
             var maybeError = ValidateAccount(account);

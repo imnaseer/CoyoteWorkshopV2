@@ -3,6 +3,7 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Coyote.Web;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -49,6 +50,9 @@ namespace PetImages
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            // Add Coyote Middleware that takes control of the controllers during testing.
+            app.UseRequestController();
 
             app.UseSwagger();
             

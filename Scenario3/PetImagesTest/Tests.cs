@@ -16,7 +16,7 @@ using PetImages.Storage;
 using PetImagesTest.Clients;
 using PetImagesTest.StorageMocks;
 
-namespace PetImagesTest
+namespace PetImagesTest.Clients
 {
     [TestClass]
     public class Tests
@@ -46,6 +46,41 @@ namespace PetImagesTest
 
             var statusCode1 = task1.Result.StatusCode;
             var statusCode2 = task2.Result.StatusCode;
+
+            // Finally, assert that only one of the two requests succeeded and the other
+            // failed. Note that we do not know which one of the two succeeded as the
+            // requests ran concurrently (this is why we use an exclusive OR).
+            Assert.IsTrue(
+                (statusCode1 == HttpStatusCode.OK && statusCode2 == HttpStatusCode.Conflict) ||
+                (statusCode1 == HttpStatusCode.Conflict && statusCode2 == HttpStatusCode.OK));
+        }
+
+        [TestMethod]
+        public async Task TestFirstScenarioAlternative()
+        {
+            // Initialize the in-memory service factory.
+            using var factory = new ServiceFactory();
+            await factory.InitializeAccountContainerAsync();
+            await factory.InitializeImageContainerAsync();
+            factory.InitializeMessagingClient();
+
+            using var client = new ServiceClient(factory);
+
+            // Create an account request payload
+            var account = new Account()
+            {
+                Name = "MyAccount"
+            };
+            // Call 'CreateAccount' twice without awaiting, which makes both methods run
+            // asynchronously with each other.
+            var task1 = client.CreateAccountAsync(account);
+            var task2 = client.CreateAccountAsync(account);
+
+            // Then wait both requests to complete.
+            await Task.WhenAll(task1, task2);
+
+            var statusCode1 = task1.Result;
+            var statusCode2 = task2.Result;
 
             // Finally, assert that only one of the two requests succeeded and the other
             // failed. Note that we do not know which one of the two succeeded as the
@@ -103,6 +138,12 @@ namespace PetImagesTest
         }
 
         [TestMethod]
+        public void SystematicTestFirstScenarioAlternative()
+        {
+            RunSystematicTest(TestFirstScenarioAlternative);
+        }
+
+        [TestMethod]
         public void SystematicTestThirdScenario()
         {
             RunSystematicTest(TestThirdScenario);
@@ -120,7 +161,10 @@ namespace PetImagesTest
         {
             // Configuration for how to run a concurrency unit test with Coyote.
             // This configuration will run the test 1000 times exploring different paths each time.
-            var config = Configuration.Create().WithTestingIterations(1000);
+            var config = Configuration
+                .Create()
+                .WithPartiallyControlledConcurrencyAllowed()
+                .WithTestingIterations(2);
 
             if (reproducibleScheduleFilePath != null)
             {

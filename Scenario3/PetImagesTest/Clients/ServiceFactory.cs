@@ -7,12 +7,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using PetImages;
 using PetImages.Messaging;
 using PetImages.Storage;
 using PetImagesTest.MessagingMocks;
 using PetImagesTest.StorageMocks;
 
-namespace PetImages.Tests
+namespace PetImagesTest.Clients
 {
     internal class ServiceFactory : WebApplicationFactory<Startup>
     {
