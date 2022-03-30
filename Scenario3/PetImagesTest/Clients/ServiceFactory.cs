@@ -23,6 +23,7 @@ namespace PetImages.Tests
         private readonly MockStorageAccount StorageAccount;
         private readonly MockCosmosDatabase CosmosDatabase;
 
+        // TODO: Mechanism to introduce faults
         public ServiceFactory()
         {
             this.StorageAccount = new MockStorageAccount();

@@ -1,19 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PetImages.Entities;
 using System.Threading.Tasks;
 using Polly;
 
-namespace PetImages.Storage.Resilient
+namespace PetImages.Storage.Wrapped
 {
-    public class ResilientStorageAccount : IStorageAccount
+    public class WrappedStorageAccount : IStorageAccount
     {
         private readonly IAsyncPolicy AsyncPolicy;
 
         private readonly IStorageAccount StorageAccount;
 
-        public ResilientStorageAccount(IStorageAccount storageAccount, IAsyncPolicy asyncPolicy)
+        public WrappedStorageAccount(IStorageAccount storageAccount, IAsyncPolicy asyncPolicy)
         {
             this.StorageAccount = storageAccount;
             this.AsyncPolicy = asyncPolicy;

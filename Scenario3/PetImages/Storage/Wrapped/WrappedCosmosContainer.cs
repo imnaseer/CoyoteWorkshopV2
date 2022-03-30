@@ -5,15 +5,15 @@ using PetImages.Entities;
 using System.Threading.Tasks;
 using Polly;
 
-namespace PetImages.Storage.Resilient
+namespace PetImages.Storage.Wrapped
 {
-    public class ResilientCosmosContainer : ICosmosContainer
+    public class WrappedCosmosContainer : ICosmosContainer
     {
         private readonly IAsyncPolicy AsyncPolicy;
 
         private readonly ICosmosContainer CosmosContainer;
 
-        public ResilientCosmosContainer(ICosmosContainer cosmosContainer, IAsyncPolicy asyncPolicy)
+        public WrappedCosmosContainer(ICosmosContainer cosmosContainer, IAsyncPolicy asyncPolicy)
         {
             this.CosmosContainer = cosmosContainer;
             this.AsyncPolicy = asyncPolicy;

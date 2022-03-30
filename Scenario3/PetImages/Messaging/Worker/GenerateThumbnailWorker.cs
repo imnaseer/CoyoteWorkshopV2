@@ -53,7 +53,7 @@ namespace PetImages.Worker
             {
                 return new WorkerResult
                 {
-                    ResultCode = WorkerResultCode.Faulted,
+                    ResultCode = WorkerResultCode.Faulted, // Should be completed, not faulted
                     Message = "Worker Faulted. Blob not found",
                 };
             }
