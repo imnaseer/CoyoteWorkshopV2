@@ -93,8 +93,6 @@ namespace PetImages
         {
             var messagingClient = new StorageMessagingClient(Constants.ThumbnailQueueName);
             services.AddSingleton<IMessagingClient>(messagingClient);
-            var messageReceiverClient = new StorageMessageReceiverClient(Constants.ThumbnailQueueName);
-            services.AddSingleton<IMessageReceiver>(messageReceiverClient);
         }
     }
 }

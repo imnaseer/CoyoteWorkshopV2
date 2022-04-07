@@ -1,18 +1,17 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PetImages.Messaging;
+using PetImages.Messaging.Worker;
 using PetImages.Storage;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace PetImages.Worker
 {
-    public class Worker : BackgroundService
+    public class BackgroundJobService : BackgroundService
     {
-        private readonly ILogger<Worker> _logger;
+        private readonly ILogger<BackgroundJobService> _logger;
 
         private readonly IWorker GenerateThumbnailWorker;
 
@@ -20,7 +19,9 @@ namespace PetImages.Worker
 
         private readonly IMessagingClient MessagingClient;
 
-        public Worker(ILogger<Worker> logger, IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount storageAccount, IMessageReceiver messageReceiver, IMessagingClient messagingClient)
+        private readonly int WaitingDelayInMs = 10000;
+
+        public BackgroundJobService(ILogger<BackgroundJobService> logger, IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount storageAccount, IMessageReceiver messageReceiver, IMessagingClient messagingClient)
         {
             _logger = logger;
             this.GenerateThumbnailWorker = new GenerateThumbnailWorker(accountContainer, imageContainer, storageAccount);
@@ -45,17 +46,14 @@ namespace PetImages.Worker
                             
                             switch(workerResult.ResultCode)
                             {
-                                case Messaging.Worker.WorkerResultCode.Enabled:
+                                case WorkerResultCode.Retry:
                                     // Requeue the message for retry
-                                    _logger.LogInformation("Requeued Worker Job");
+                                    _logger.LogInformation($"Requeued Worker Job. Worker Message: {workerResult.Message}");
                                     await this.MessagingClient.SubmitMessage(nextMessage);
-                                    await Task.Delay(10000); // Wait before processing next message?
+                                    await Task.Delay(WaitingDelayInMs);
                                     break;
-                                case Messaging.Worker.WorkerResultCode.Completed:
-                                    _logger.LogInformation("Generated thumbnail successfully");
-                                    break;
-                                case Messaging.Worker.WorkerResultCode.Faulted:
-                                    _logger.LogError($"Failed to generate thumbnail, reason: {workerResult.Message}");
+                                case WorkerResultCode.Completed:
+                                    _logger.LogInformation($"Generated thumbnail successfully. Worker Message: {workerResult.Message}");
                                     break;
                             }
                         }
@@ -73,7 +71,7 @@ namespace PetImages.Worker
                 else
                 {
                     _logger.LogInformation("Worker running at: {time}. No messages processed.", DateTimeOffset.Now);
-                    await Task.Delay(10000, stoppingToken); // configure delay?
+                    await Task.Delay(WaitingDelayInMs, stoppingToken);
                 }
             }
         }
