@@ -40,9 +40,10 @@ namespace PetImages.Controllers
         /// <summary>
         /// ...
         /// </summary>
-        [HttpPost]
+        [HttpPost("{accountName}")]
+        [NonAction]
         public async Task<ActionResult<ImageRecord>> CreateImageRecordSecondScenarioAsync(
-            [FromQuery] string accountName,
+            [FromRoute] string accountName,
             [FromBody] ImageRecord imageRecord)
         {
             var maybeError = await ValidateImageRecordAsync(accountName, imageRecord);
@@ -94,6 +95,7 @@ namespace PetImages.Controllers
         /// <summary>
         /// ...
         /// </summary>
+        [HttpPost("{accountName}")]
         [NonAction]
         public async Task<ActionResult<ImageRecord>> CreateImageRecordThirdScenarioBuggyAsync(string accountName, ImageRecord imageRecord)
         {
@@ -153,6 +155,7 @@ namespace PetImages.Controllers
         /// <summary>
         /// ...
         /// </summary>
+        [HttpPost("{accountName}")]
         [NonAction]
         public async Task<ActionResult<ImageRecord>> CreateImageRecordThirdScenarioFixedAsync(string accountName, ImageRecord imageRecord)
         {
@@ -213,7 +216,7 @@ namespace PetImages.Controllers
         /// <summary>
         /// ...
         /// </summary>
-        [NonAction]
+        [HttpPost("{accountName}")]
         public async Task<ActionResult<ImageRecord>> CreateImageRecordFourthScenarioAsync(string accountName, ImageRecord imageRecord)
         {
             var maybeError = await ValidateImageRecordAsync(accountName, imageRecord);
@@ -280,11 +283,10 @@ namespace PetImages.Controllers
             return this.Ok(imageRecordItem.ToImageRecord());
         }
 
-        [HttpGet]
-
+        [HttpGet("{accountName}/{imageName}")]
         public async Task<ActionResult<ImageRecord>> GetImageRecord(
-            [FromQuery] string accountName,
-            [FromQuery] string imageName)
+            [FromRoute] string accountName,
+            [FromRoute] string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);
             if (maybeError != null)
@@ -303,7 +305,7 @@ namespace PetImages.Controllers
             }
         }
 
-        [HttpDelete]
+        [HttpDelete("{accountName}/{imageName}")]
         public async Task<ActionResult> DeleteImageRecord(string accountName, string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);
@@ -328,10 +330,10 @@ namespace PetImages.Controllers
         }
 
         // TODO: Fix this, its an action
-        [HttpGet("/contents")]
+        [HttpGet("{accountName}/{imageName}/content")]
         public async Task<ActionResult<byte[]>> GetImageContentsAsync(
-            [FromQuery] string accountName,
-            [FromQuery] string imageName)
+            [FromRoute] string accountName,
+            [FromRoute] string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);
             if (maybeError != null)
@@ -357,10 +359,10 @@ namespace PetImages.Controllers
             }
         }
 
-        [HttpGet("/thumbnail")]
+        [HttpGet("{accountName}/{imageName}/thumbnail")]
         public async Task<ActionResult<byte[]>> GetImageThumbailAsync(
-            [FromQuery] string accountName,
-            [FromQuery] string imageName)
+            [FromRoute] string accountName,
+            [FromRoute] string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);
             if (maybeError != null)

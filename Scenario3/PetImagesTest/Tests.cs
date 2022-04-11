@@ -27,6 +27,8 @@ namespace PetImagesTest.Clients
     [TestClass]
     public class Tests
     {
+        private static bool useInMemoryClient = false;
+
         [TestMethod]
         public async Task TestFirstScenario()
         {
@@ -436,34 +438,46 @@ namespace PetImagesTest.Clients
 
         private static async Task<IServiceClient> InitializeSystemAsync(IAsyncPolicy asyncPolicy = null)
         {
-            var cosmosState = new MockCosmosState();
-
-            if (asyncPolicy == null)
+            if (useInMemoryClient)
             {
-                asyncPolicy = RetryPolicyFactory.GetAsyncRetryExponential();
+                var cosmosState = new MockCosmosState();
+
+                if (asyncPolicy == null)
+                {
+                    asyncPolicy = RetryPolicyFactory.GetAsyncRetryExponential();
+                }
+
+                var database = new WrappedCosmosDatabase(
+                    new MockCosmosDatabase(cosmosState),
+                    asyncPolicy);
+                var accountContainer = (IAccountContainer)await database.CreateContainerAsync(Constants.AccountContainerName);
+                var imageContainer = (IImageContainer)await database.CreateContainerAsync(Constants.ImageContainerName);
+
+                var storageAccount = new WrappedStorageAccount(
+                    new MockStorageAccount(),
+                    asyncPolicy);
+
+                var messagingClient = new WrappedMessagingClient(
+                    new MockMessagingClient(accountContainer, imageContainer, storageAccount),
+                    asyncPolicy);
+
+                var serviceClient = new InMemoryTestServiceClient(
+                    accountContainer,
+                    imageContainer,
+                    storageAccount,
+                    messagingClient);
+
+                return serviceClient;
             }
+            else
+            {
+                var factory = new ServiceFactory();
+                await factory.InitializeAccountContainerAsync();
+                await factory.InitializeImageContainerAsync();
+                await factory.InitializeMessagingClient();
 
-            var database = new WrappedCosmosDatabase(
-                new MockCosmosDatabase(cosmosState),
-                asyncPolicy);
-            var accountContainer = (IAccountContainer)await database.CreateContainerAsync(Constants.AccountContainerName);
-            var imageContainer = (IImageContainer)await database.CreateContainerAsync(Constants.ImageContainerName);
-            
-            var storageAccount = new WrappedStorageAccount(
-                new MockStorageAccount(),
-                asyncPolicy);
-
-            var messagingClient = new WrappedMessagingClient(
-                new MockMessagingClient(accountContainer, imageContainer, storageAccount),
-                asyncPolicy);
-
-            var serviceClient = new InMemoryTestServiceClient(
-                accountContainer,
-                imageContainer,
-                storageAccount,
-                messagingClient);
-
-            return serviceClient;
+                return new TestServiceClient(factory);
+            }
         }
 
         /// <summary>

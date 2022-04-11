@@ -15,13 +15,11 @@ namespace PetImagesTest.Clients
     {
         private readonly HttpClient Client;
 
-        // TODO: Need to fix routes and then write the client
-        // TODO: To use the factory, in the tests, do this:
-        // using var factory = new ServiceFactory();
-        // await factory.InitializeAccountContainerAsync();
-        // await factory.InitializeImageContainerAsync();
-        // factory.InitializeMessagingClient();
-        // using var client = new ServiceClient(factory);
+        private static JsonSerializerOptions serializerOptions = new JsonSerializerOptions()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+
         internal TestServiceClient(ServiceFactory factory)
         {
             this.Client = factory.CreateClient(new WebApplicationFactoryClientOptions()
@@ -37,27 +35,40 @@ namespace PetImagesTest.Clients
                 new Uri($"Account", UriKind.RelativeOrAbsolute),
                 JsonContent.Create(account));
 
-            return await CreateServiceResponseAsync<Account>(response);
+            return await ConstructServiceResponse<Account>(response);
         }
 
-        Task<ServiceResponse<ImageRecord>> IServiceClient.CreateOrUpdateImageAsync(string accountName, ImageRecord image)
+        public async Task<ServiceResponse<ImageRecord>> CreateOrUpdateImageAsync(string accountName, ImageRecord imageRecord)
         {
-            throw new NotImplementedException();
+            var response = await this.Client.PostAsync(
+                new Uri($"Image/{accountName}", UriKind.RelativeOrAbsolute),
+                JsonContent.Create(imageRecord));
+
+            return await ConstructServiceResponse<ImageRecord>(response);
         }
 
-        public Task<ServiceResponse<ImageRecord>> GetImageRecordAsync(string accountName, string imageName)
+        public async Task<ServiceResponse<ImageRecord>> GetImageRecordAsync(string accountName, string imageName)
         {
-            throw new NotImplementedException();
+            var response = await this.Client.GetAsync(
+                new Uri($"Image/{accountName}/{imageName}", UriKind.RelativeOrAbsolute));
+
+            return await ConstructServiceResponse<ImageRecord>(response);
         }
 
-        Task<ServiceResponse<byte[]>> IServiceClient.GetImageAsync(string accountName, string imageName)
+        public async Task<ServiceResponse<byte[]>> GetImageAsync(string accountName, string imageName)
         {
-            throw new NotImplementedException();
+            var response = await this.Client.GetAsync(
+                new Uri($"Image/{accountName}/{imageName}/content", UriKind.RelativeOrAbsolute));
+
+            return await ConstructServiceResponse<byte[]>(response);
         }
 
-        Task<ServiceResponse<byte[]>> IServiceClient.GetImageThumbnailAsync(string accountName, string imageName)
+        public async Task<ServiceResponse<byte[]>> GetImageThumbnailAsync(string accountName, string imageName)
         {
-            throw new NotImplementedException();
+            var response = await this.Client.GetAsync(
+                new Uri($"Image/{accountName}/{imageName}/thumbnail", UriKind.RelativeOrAbsolute));
+
+            return await ConstructServiceResponse<byte[]>(response);
         }
 
         public void Dispose()
@@ -65,7 +76,7 @@ namespace PetImagesTest.Clients
             this.Client.Dispose();
         }
 
-        private static async Task<ServiceResponse<T>> CreateServiceResponseAsync<T>(HttpResponseMessage httpResponse)
+        private static async Task<ServiceResponse<T>> ConstructServiceResponse<T>(HttpResponseMessage httpResponse)
             where T : class
         {
             var statusCode = (int)httpResponse.StatusCode;
@@ -75,7 +86,9 @@ namespace PetImagesTest.Clients
                 return new ServiceResponse<T>()
                 {
                     StatusCode = httpResponse.StatusCode,
-                    Resource = JsonSerializer.Deserialize<T>(await httpResponse.Content.ReadAsStringAsync())
+                    Resource = JsonSerializer.Deserialize<T>(
+                        await httpResponse.Content.ReadAsStringAsync(),
+                        serializerOptions)
                 };
             }
             else if (statusCode >= 400 && statusCode <= 499)
@@ -83,7 +96,9 @@ namespace PetImagesTest.Clients
                 return new ServiceResponse<T>()
                 {
                     StatusCode = httpResponse.StatusCode,
-                    Error = JsonSerializer.Deserialize<Error>(await httpResponse.Content.ReadAsStringAsync())
+                    Error = JsonSerializer.Deserialize<Error>(
+                        await httpResponse.Content.ReadAsStringAsync(),
+                        serializerOptions)
                 };
             }
             else if (statusCode >= 500 && statusCode <= 599)

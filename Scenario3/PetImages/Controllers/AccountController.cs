@@ -49,8 +49,8 @@ namespace PetImages.Controllers
             return this.Ok(accountItem.ToAccount());
         }
 
-        [HttpGet]
-        public async Task<ActionResult<Account>> GetAccountAsync(string name)
+        [HttpGet("{name}")]
+        public async Task<ActionResult<Account>> GetAccountAsync([FromRoute] string name)
         {
             try
             {
@@ -63,8 +63,8 @@ namespace PetImages.Controllers
             }
         }
 
-        [HttpDelete]
-        public async Task<ActionResult<Account>> DeleteAccountAsync(string name)
+        [HttpDelete("{name}")]
+        public async Task<ActionResult<Account>> DeleteAccountAsync([FromRoute] string name)
         {
             try
             {
