@@ -30,7 +30,7 @@ namespace PetImagesTest.Clients
         [TestMethod]
         public async Task TestFirstScenario()
         {
-            var petImagesClient = await InitializeSystemAsync();
+            var serviceClient = await InitializeSystemAsync();
 
             // Create an account request payload
             var account = new Account()
@@ -40,8 +40,8 @@ namespace PetImagesTest.Clients
 
             // Call CreateAccount twice without awaiting, which makes both methods run
             // asynchronously with each other.
-            var task1 = petImagesClient.CreateAccountAsync(account);
-            var task2 = petImagesClient.CreateAccountAsync(account);
+            var task1 = serviceClient.CreateAccountAsync(account);
+            var task2 = serviceClient.CreateAccountAsync(account);
 
             // Then wait both requests to complete.
             await Task.WhenAll(task1, task2);
@@ -66,7 +66,7 @@ namespace PetImagesTest.Clients
             await factory.InitializeImageContainerAsync();
             await factory.InitializeMessagingClient();
 
-            using var client = new ServiceClient(factory);
+            using var serviceClient = new TestServiceClient(factory);
 
             // Create an account request payload
             var account = new Account()
@@ -75,14 +75,14 @@ namespace PetImagesTest.Clients
             };
             // Call 'CreateAccount' twice without awaiting, which makes both methods run
             // asynchronously with each other.
-            var task1 = client.CreateAccountAsync(account);
-            var task2 = client.CreateAccountAsync(account);
+            var task1 = serviceClient.CreateAccountAsync(account);
+            var task2 = serviceClient.CreateAccountAsync(account);
 
             // Then wait both requests to complete.
             await Task.WhenAll(task1, task2);
 
-            var statusCode1 = task1.Result;
-            var statusCode2 = task2.Result;
+            var statusCode1 = task1.Result.StatusCode;
+            var statusCode2 = task2.Result.StatusCode;
 
             // Finally, assert that only one of the two requests succeeded and the other
             // failed. Note that we do not know which one of the two succeeded as the
@@ -95,7 +95,7 @@ namespace PetImagesTest.Clients
         [TestMethod]
         public async Task TestSecondScenarioUpdate()
         {
-            var petImagesClient = await InitializeSystemAsync();
+            var serviceClient = await InitializeSystemAsync();
 
             string accountName = "MyAccount";
             string imageName = "pet.jpg";
@@ -107,10 +107,10 @@ namespace PetImagesTest.Clients
                 Name = accountName
             };
 
-            var accountResult = await petImagesClient.CreateAccountAsync(account);
+            var accountResult = await serviceClient.CreateAccountAsync(account);
             Assert.IsTrue(accountResult.StatusCode == HttpStatusCode.OK);
 
-            var createResult = await petImagesClient.CreateOrUpdateImageAsync(
+            var createResult = await serviceClient.CreateOrUpdateImageAsync(
                 accountName,
                 new ImageRecord()
                 {
@@ -123,7 +123,7 @@ namespace PetImagesTest.Clients
 
             var utcNow = DateTime.UtcNow;
 
-            var updateResult1 = petImagesClient.CreateOrUpdateImageAsync(
+            var updateResult1 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
                 new ImageRecord()
                 {
@@ -132,7 +132,7 @@ namespace PetImagesTest.Clients
                     Content = GetCatImageBytes(),
                     LastModifiedTimestamp = utcNow
                 });
-            var updateResult2 = petImagesClient.CreateOrUpdateImageAsync(
+            var updateResult2 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
                 new ImageRecord()
                 {
@@ -157,7 +157,7 @@ namespace PetImagesTest.Clients
         [TestMethod]
         public async Task TestSecondScenarioCreate()
         {
-            var petImagesClient = await InitializeSystemAsync();
+            var serviceClient = await InitializeSystemAsync();
 
             string accountName = "MyAccount";
             string imageName = "pet.jpg";
@@ -169,12 +169,12 @@ namespace PetImagesTest.Clients
                 Name = accountName
             };
 
-            var accountResult = await petImagesClient.CreateAccountAsync(account);
+            var accountResult = await serviceClient.CreateAccountAsync(account);
             Assert.IsTrue(accountResult.StatusCode == HttpStatusCode.OK);
 
             var utcNow = DateTime.UtcNow;
 
-            var createResult1 = petImagesClient.CreateOrUpdateImageAsync(
+            var createResult1 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
                 new ImageRecord()
                 {
@@ -183,7 +183,7 @@ namespace PetImagesTest.Clients
                     Content = GetCatImageBytes(),
                     LastModifiedTimestamp = utcNow
                 });
-            var createResult2 = petImagesClient.CreateOrUpdateImageAsync(
+            var createResult2 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
                 new ImageRecord()
                 {
@@ -208,7 +208,7 @@ namespace PetImagesTest.Clients
         [TestMethod]
         public async Task TestThirdScenario()
         {
-            var petImagesClient = await InitializeSystemAsync();
+            var serviceClient = await InitializeSystemAsync();
 
             string accountName = "MyAccount";
             string imageName = "pet.jpg";
@@ -220,13 +220,13 @@ namespace PetImagesTest.Clients
                 Name = accountName
             };
 
-            var accountResult = await petImagesClient.CreateAccountAsync(account);
+            var accountResult = await serviceClient.CreateAccountAsync(account);
             Assert.IsTrue(accountResult.StatusCode == HttpStatusCode.OK);
 
-            var task1 = petImagesClient.CreateOrUpdateImageAsync(
+            var task1 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
                 new ImageRecord() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
-            var task2 = petImagesClient.CreateOrUpdateImageAsync(
+            var task2 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
                 new ImageRecord() { Name = imageName, ContentType = contentType, Content = GetCatImageBytes() });
 
@@ -240,7 +240,7 @@ namespace PetImagesTest.Clients
                 (statusCode1 == HttpStatusCode.Conflict && statusCode2 == HttpStatusCode.OK) ||
                 (statusCode1 == HttpStatusCode.OK && statusCode2 == HttpStatusCode.OK));
 
-            var imageContentResult = await petImagesClient.GetImageAsync(accountName, imageName);
+            var imageContentResult = await serviceClient.GetImageAsync(accountName, imageName);
             Assert.IsTrue(imageContentResult.StatusCode == HttpStatusCode.OK);
 
             if (statusCode1 == HttpStatusCode.OK && statusCode2 != HttpStatusCode.OK)
@@ -262,7 +262,7 @@ namespace PetImagesTest.Clients
         [TestMethod]
         public async Task TestFourthScenario()
         {
-            var petImagesClient = await InitializeSystemAsync();
+            var serviceClient = await InitializeSystemAsync();
 
             string accountName = "MyAccount";
             string imageName = "pet.jpg";
@@ -274,13 +274,13 @@ namespace PetImagesTest.Clients
                 Name = accountName
             };
 
-            var accountResult = await petImagesClient.CreateAccountAsync(account);
+            var accountResult = await serviceClient.CreateAccountAsync(account);
             Assert.IsTrue(accountResult.StatusCode == HttpStatusCode.OK);
 
-            var task1 = petImagesClient.CreateOrUpdateImageAsync(
+            var task1 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
                 new ImageRecord() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
-            var task2 = petImagesClient.CreateOrUpdateImageAsync(
+            var task2 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
                 new ImageRecord() { Name = imageName, ContentType = contentType, Content = GetCatImageBytes() });
 
@@ -297,7 +297,7 @@ namespace PetImagesTest.Clients
             ImageRecord imageRecord;
             while (true)
             {
-                var imageRecordResult = await petImagesClient.GetImageRecordAsync(accountName, imageName);
+                var imageRecordResult = await serviceClient.GetImageRecordAsync(accountName, imageName);
                 Assert.IsTrue(imageRecordResult.StatusCode == HttpStatusCode.OK);
 
                 imageRecord = imageRecordResult.Resource;
@@ -309,10 +309,10 @@ namespace PetImagesTest.Clients
                 await Task.Delay(100);
             }
 
-            var imageContentResult = await petImagesClient.GetImageAsync(accountName, imageName);
+            var imageContentResult = await serviceClient.GetImageAsync(accountName, imageName);
             Assert.IsTrue(imageContentResult.StatusCode == HttpStatusCode.OK);
 
-            var thumbnailContentResult = await petImagesClient.GetImageThumbnailAsync(accountName, imageName);
+            var thumbnailContentResult = await serviceClient.GetImageThumbnailAsync(accountName, imageName);
             Assert.IsTrue(thumbnailContentResult.StatusCode == HttpStatusCode.OK);
 
             var image = imageContentResult.Resource;
@@ -338,7 +338,7 @@ namespace PetImagesTest.Clients
         public async Task TestFifthScenario()
         {
             var randomizedFaultPolicy = TestRetryPolicyFactory.GetRandomPermanentFailureAsyncPolicy();
-            var petImagesClient = await InitializeSystemAsync(randomizedFaultPolicy);
+            var serviceClient = await InitializeSystemAsync(randomizedFaultPolicy);
             randomizedFaultPolicy.ShouldRandomlyFail = false;
 
             string accountName = "MyAccount";
@@ -351,14 +351,14 @@ namespace PetImagesTest.Clients
                 Name = accountName
             };
 
-            var accountResult = await petImagesClient.CreateAccountAsync(account);
+            var accountResult = await serviceClient.CreateAccountAsync(account);
             Assert.IsTrue(accountResult.StatusCode == HttpStatusCode.OK);
 
             randomizedFaultPolicy.ShouldRandomlyFail = true;
 
             try
             {
-                var imageRecordResult = await petImagesClient.CreateOrUpdateImageAsync(
+                var imageRecordResult = await serviceClient.CreateOrUpdateImageAsync(
                     accountName,
                     new ImageRecord() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
                 Assert.IsTrue(imageRecordResult.StatusCode == HttpStatusCode.OK);
@@ -372,7 +372,7 @@ namespace PetImagesTest.Clients
             ImageRecord imageRecord;
             while (true)
             {
-                var imageRecordResult = await petImagesClient.GetImageRecordAsync(accountName, imageName);
+                var imageRecordResult = await serviceClient.GetImageRecordAsync(accountName, imageName);
                 Assert.IsTrue(
                     imageRecordResult.StatusCode == HttpStatusCode.OK ||
                     imageRecordResult.StatusCode == HttpStatusCode.NotFound);
@@ -434,7 +434,7 @@ namespace PetImagesTest.Clients
             RunSystematicTest(TestFifthScenario);
         }
 
-        private static async Task<IPetImagesClient> InitializeSystemAsync(IAsyncPolicy asyncPolicy = null)
+        private static async Task<IServiceClient> InitializeSystemAsync(IAsyncPolicy asyncPolicy = null)
         {
             var cosmosState = new MockCosmosState();
 
@@ -457,13 +457,13 @@ namespace PetImagesTest.Clients
                 new MockMessagingClient(accountContainer, imageContainer, storageAccount),
                 asyncPolicy);
 
-            var petImagesClient = new TestPetImagesClient(
+            var serviceClient = new InMemoryTestServiceClient(
                 accountContainer,
                 imageContainer,
                 storageAccount,
                 messagingClient);
 
-            return petImagesClient;
+            return serviceClient;
         }
 
         /// <summary>
@@ -481,7 +481,7 @@ namespace PetImagesTest.Clients
             var config = Configuration
                 .Create()
                 .WithMaxSchedulingSteps(5000)
-                .WithTestingIterations(10);
+                .WithTestingIterations(3);
 
             if (reproducibleScheduleFilePath != null)
             {

@@ -13,24 +13,24 @@ using PetImages.Messaging;
 
 namespace PetImagesTest.Clients
 {
-    public class TestPetImagesClient : IPetImagesClient
+    public class InMemoryTestServiceClient : IServiceClient
     {
         private readonly IAccountContainer AccountContainer;
         private readonly IImageContainer ImageContainer;
         private readonly IStorageAccount BlobContainer;
         private readonly IMessagingClient MessagingClient;
 
-        public TestPetImagesClient(IAccountContainer accountContainer)
+        public InMemoryTestServiceClient(IAccountContainer accountContainer)
             : this(accountContainer, null, null, null)
         {
         }
 
-        public TestPetImagesClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer)
+        public InMemoryTestServiceClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer)
             : this(accountContainer, imageContainer, blobContainer, null)
         {
         }
 
-        public TestPetImagesClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer, IMessagingClient messagingClient)
+        public InMemoryTestServiceClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer, IMessagingClient messagingClient)
         {
             this.AccountContainer = accountContainer;
             this.ImageContainer = imageContainer;

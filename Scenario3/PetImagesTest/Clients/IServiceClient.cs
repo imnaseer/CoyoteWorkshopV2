@@ -6,7 +6,7 @@ using PetImages.Contracts;
 
 namespace PetImagesTest.Clients
 {
-    public interface IPetImagesClient
+    public interface IServiceClient
     {
         public Task<ServiceResponse<Account>> CreateAccountAsync(Account account);
 

@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace PetImagesTest.Clients
 {
-    public class WrappedPetImagesClient : IPetImagesClient
+    public class WrappedPetImagesClient : IServiceClient
     {
         private readonly IAsyncPolicy AsyncPolicy;
         
-        private readonly IPetImagesClient Client;
+        private readonly IServiceClient Client;
 
-        public WrappedPetImagesClient(IPetImagesClient client, IAsyncPolicy asyncPolicy)
+        public WrappedPetImagesClient(IServiceClient client, IAsyncPolicy asyncPolicy)
         {
             this.Client = client;
             this.AsyncPolicy = asyncPolicy;
