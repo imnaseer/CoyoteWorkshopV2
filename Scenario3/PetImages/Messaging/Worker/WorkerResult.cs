@@ -10,7 +10,6 @@
     public enum WorkerResultCode
     {
         Completed,
-        Faulted, // Remove this
-        Enabled // Rename this to retry
+        Retry
     }
 }
