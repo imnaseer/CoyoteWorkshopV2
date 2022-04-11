@@ -4,7 +4,7 @@
 using System.Threading.Tasks;
 using Polly;
 
-namespace PetImages.Storage.Wrapped
+namespace PetImages.Storage
 {
     public class WrappedStorageAccount : IStorageAccount
     {

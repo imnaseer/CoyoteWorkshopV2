@@ -9,6 +9,8 @@ namespace PetImages.Messaging
 
         public string ImageName { get; set; }
 
+        public string RequestId { get; set; }
+
         public GenerateThumbnailMessage()
         {
             Type = GenerateThumbnailMessageType;

@@ -9,11 +9,14 @@ namespace PetImages.Entities
     {
         public override string PartitionKey => Id;
 
+        public string Description { get; set; }
+
         public Account ToAccount()
         {
             return new Account()
             {
-                Name = Id
+                Name = Id,
+                Description = Description
             };
         }
     }

@@ -31,7 +31,8 @@ namespace PetImagesTest.Clients
 
         public async Task<HttpStatusCode> CreateAccountAsync(Account account)
         {
-            var response = await this.Client.PostAsync(new Uri($"Account", UriKind.RelativeOrAbsolute),
+            var response = await this.Client.PostAsync(
+                new Uri($"Account", UriKind.RelativeOrAbsolute),
                 JsonContent.Create(account));
             return response.StatusCode;
         }

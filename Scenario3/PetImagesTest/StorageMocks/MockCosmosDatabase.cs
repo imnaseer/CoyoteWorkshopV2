@@ -24,7 +24,7 @@ namespace PetImagesTest.StorageMocks
             });
         }
 
-        public Task<ICosmosContainer> GetContainer(string containerName)
+        public Task<ICosmosContainer> GetContainerAsync(string containerName)
         {
             return Task.Run<ICosmosContainer>(() =>
             {

@@ -13,6 +13,6 @@ namespace PetImages.Storage
     {
         Task<ICosmosContainer> CreateContainerAsync(string containerName);
 
-        Task<ICosmosContainer> GetContainer(string containerName);
+        Task<ICosmosContainer> GetContainerAsync(string containerName);
     }
 }

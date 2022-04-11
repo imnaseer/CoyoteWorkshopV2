@@ -38,9 +38,9 @@ namespace PetImages
                 });
             });
 
-            this.InitializeCosmosServices(services);
-            this.InitializeStorageServices(services);
-            this.InitializeQueueServices(services);
+            //this.InitializeCosmosServices(services);
+            //this.InitializeStorageServices(services);
+            //this.InitializeQueueServices(services);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -55,7 +55,7 @@ namespace PetImages
             app.UseRequestController();
 
             app.UseSwagger();
-            
+
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "PetImages API");

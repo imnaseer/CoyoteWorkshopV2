@@ -7,18 +7,6 @@ namespace PetImages.RetryFramework
 {
     public class RetryPolicyFactory
     {
-        public static ISyncPolicy GetRetryExponential(int numOfAttempts = 3, Func<Exception, bool> isRetryableException = null)
-        {
-            Func<Exception, bool> shouldRetry = isRetryableException ?? DefaultRetryableNetworkExceptions;
-
-            Policy syncPolicy = Policy
-                .Handle<Exception>(ex => shouldRetry(ex))
-                .WaitAndRetry(numOfAttempts, retryAttempt =>
-                                TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
-
-            return syncPolicy;
-        }
-
         public static IAsyncPolicy GetAsyncRetryExponential(int numOfAttempts = 3, Func<Exception, bool> isRetryableException = null)
         {
             Func<Exception, bool> shouldRetry = isRetryableException ?? DefaultRetryableNetworkExceptions;

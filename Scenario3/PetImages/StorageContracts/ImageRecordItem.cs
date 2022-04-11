@@ -22,6 +22,8 @@ namespace PetImages.Entities
 
         public DateTime LastModifiedTimestamp { get; set; }
 
+        public string LastTouchedByRequestId { get; set; }
+
         public ImageRecord ToImageRecord()
         {
             return new ImageRecord()

@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
@@ -9,6 +10,7 @@ using PetImages.Entities;
 using PetImages.Exceptions;
 using PetImages.Storage;
 using PetImages.Messaging;
+using System.Text;
 
 namespace PetImages.Controllers
 {
@@ -20,6 +22,8 @@ namespace PetImages.Controllers
         private readonly ICosmosContainer ImageRecordContainer;
         private readonly IStorageAccount StorageAccount;
         private readonly IMessagingClient MessagingClient;
+
+        private static HashAlgorithm hashAlgorithm = HashAlgorithm.Create("SHA-256");
 
         public ImageController(
             IAccountContainer accountContainer,
@@ -107,6 +111,7 @@ namespace PetImages.Controllers
             await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageRecord.Name, imageRecord.ContentType, imageRecord.Content);
 
             var imageRecordItem = imageRecord.ToImageRecordItem();
+            imageRecordItem.BlobName = imageRecord.Name; // TODO: Remove this line in workshop code
             var maybeExistingImageRecordItem = await CosmosHelper.GetItemIfExists<ImageRecordItem>(
                 ImageRecordContainer,
                 imageRecordItem.PartitionKey,
@@ -217,14 +222,18 @@ namespace PetImages.Controllers
                 return this.BadRequest(maybeError);
             }
 
+            var requestId = Guid.NewGuid().ToString();
+
             await this.MessagingClient.SubmitMessage(new GenerateThumbnailMessage()
             {
                 AccountName = accountName,
-                ImageName = imageRecord.Name
+                ImageName = imageRecord.Name,
+                RequestId = requestId
             });
 
             var imageRecordItem = imageRecord.ToImageRecordItem(blobName: Guid.NewGuid().ToString());
             imageRecordItem.State = ImageRecordState.Creating.ToString();
+            imageRecordItem.LastTouchedByRequestId = requestId;
 
             // We upload the image to Azure Storage, before adding an entry to Cosmos DB
             // so that it is guaranteed to be there when user does a GET request.

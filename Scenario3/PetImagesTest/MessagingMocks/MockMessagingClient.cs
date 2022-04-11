@@ -8,6 +8,7 @@ using PetImages.Messaging;
 using PetImages.Messaging.Worker;
 using PetImages.Storage;
 using PetImages.Worker;
+using PetImagesTest.Exceptions;
 
 namespace PetImagesTest.MessagingMocks
 {
@@ -15,9 +16,12 @@ namespace PetImagesTest.MessagingMocks
     {
         private readonly IWorker GenerateThumbnailWorker;
 
-        public MockMessagingClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer)
+        public MockMessagingClient(
+            IAccountContainer accountContainer,
+            IImageContainer imageContainer,
+            IStorageAccount storageAccount)
         {
-            this.GenerateThumbnailWorker = new GenerateThumbnailWorker(accountContainer, imageContainer, blobContainer);
+            this.GenerateThumbnailWorker = new GenerateThumbnailWorker(accountContainer, imageContainer, storageAccount);
         }
 
         public Task SubmitMessage(Message message)
@@ -37,9 +41,9 @@ namespace PetImagesTest.MessagingMocks
                         throw new InvalidOperationException();
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    Specification.Assert(false, "Uncaught exception in worker");
+                    Specification.Assert(false, $"Uncaught exception in worker: {ex}");
                 }
             });
 
@@ -48,12 +52,18 @@ namespace PetImagesTest.MessagingMocks
 
         private async Task<WorkerResult> RunThumbnailWorkerWithRetry(GenerateThumbnailMessage message)
         {
-            WorkerResult workerResult;
+            WorkerResult workerResult = null;
             do
             {
-                workerResult = await this.GenerateThumbnailWorker.ProcessMessage(message);
+                try
+                {
+                    workerResult = await this.GenerateThumbnailWorker.ProcessMessage(message);
+                }
+                catch (SimulatedRandomFaultException)
+                {
+                }
             }
-            while(workerResult == null || workerResult.ResultCode == WorkerResultCode.Enabled);
+            while (workerResult == null || workerResult.ResultCode == WorkerResultCode.Enabled);
 
             return workerResult;
         }

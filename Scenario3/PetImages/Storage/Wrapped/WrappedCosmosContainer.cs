@@ -5,9 +5,9 @@ using PetImages.Entities;
 using System.Threading.Tasks;
 using Polly;
 
-namespace PetImages.Storage.Wrapped
+namespace PetImages.Storage
 {
-    public class WrappedCosmosContainer : ICosmosContainer
+    public class WrappedCosmosContainer : ICosmosContainer, IAccountContainer, IImageContainer
     {
         private readonly IAsyncPolicy AsyncPolicy;
 

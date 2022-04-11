@@ -9,11 +9,14 @@ namespace PetImages.Contracts
     {
         public string Name { get; set; }
 
+        public string Description { get; set; }
+
         public AccountItem ToItem()
         {
             return new AccountItem()
             {
-                Id = Name
+                Id = Name,
+                Description = Description
             };
         }
     }

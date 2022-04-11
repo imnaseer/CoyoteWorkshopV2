@@ -46,7 +46,7 @@ namespace PetImages.Storage
             return new CosmosContainer(cosmosContainer);
         }
 
-        public Task<ICosmosContainer> GetContainer(string containerName)
+        public Task<ICosmosContainer> GetContainerAsync(string containerName)
         {
             var cosmosContainer = this.cosmosDatabase.GetContainer(containerName);
             

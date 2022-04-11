@@ -16,11 +16,11 @@ namespace PetImages.Controllers
     [Route("[controller]")]
     public class AccountController : ControllerBase
     {
-        private readonly ICosmosContainer CosmosContainer;
+        private readonly IAccountContainer AccountContainer;
 
-        public AccountController(IAccountContainer cosmosDb)
+        public AccountController(IAccountContainer accountContainer)
         {
-            this.CosmosContainer = cosmosDb;
+            this.AccountContainer = accountContainer;
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace PetImages.Controllers
 
             try
             {
-                accountItem = await this.CosmosContainer.CreateItem(accountItem);
+                accountItem = await this.AccountContainer.CreateItem(accountItem);
             }
             catch (DatabaseItemAlreadyExistsException)
             {
@@ -54,7 +54,7 @@ namespace PetImages.Controllers
         {
             try
             {
-                var accountItem = await this.CosmosContainer.GetItem<AccountItem>(partitionKey: name, id: name);
+                var accountItem = await this.AccountContainer.GetItem<AccountItem>(partitionKey: name, id: name);
                 return this.Ok(accountItem.ToAccount());
             }
             catch (DatabaseItemDoesNotExistException)
@@ -68,7 +68,7 @@ namespace PetImages.Controllers
         {
             try
             {
-                await this.CosmosContainer.DeleteItem(partitionKey: name, id: name);
+                await this.AccountContainer.DeleteItem(partitionKey: name, id: name);
                 return this.Ok();
             }
             catch (DatabaseItemDoesNotExistException)
@@ -93,14 +93,14 @@ namespace PetImages.Controllers
             var accountItem = account.ToItem();
 
             if (await CosmosHelper.DoesItemExist<AccountItem>(
-                this.CosmosContainer,
+                this.AccountContainer,
                 accountItem.PartitionKey,
                 accountItem.Id))
             {
                 return this.Conflict();
             }
 
-            var createdAccountItem = await this.CosmosContainer.CreateItem(accountItem);
+            var createdAccountItem = await this.AccountContainer.CreateItem(accountItem);
 
             return this.Ok(createdAccountItem.ToAccount());
         }

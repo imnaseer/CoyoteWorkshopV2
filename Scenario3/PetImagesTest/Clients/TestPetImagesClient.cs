@@ -42,8 +42,8 @@ namespace PetImagesTest.Clients
         {
             var accountCopy = TestHelper.Clone(account);
 
-            
-            return await Task.Run(async () => 
+
+            return await Task.Run(async () =>
             {
                 var controller = new AccountController(this.AccountContainer);
                 var actionResult = await InvokeControllerAction(async () => await controller.CreateAccountAsync(accountCopy));
@@ -51,13 +51,25 @@ namespace PetImagesTest.Clients
             });
         }
 
-        public async Task<ServiceResponse<ImageRecord>> CreateImageAsync(string accountName, ImageRecord image)
+        public async Task<ServiceResponse<ImageRecord>> CreateOrUpdateImageAsync(string accountName, ImageRecord image)
         {
             var imageCopy = TestHelper.Clone(image);
 
-            return await Task.Run(async () => {
+            return await Task.Run(async () =>
+            {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerAction(async () => await controller.CreateImageRecordSecondScenarioAsync(accountName, imageCopy));
+                var actionResult = await InvokeControllerAction(async () => await controller.CreateImageRecordFourthScenarioAsync(accountName, imageCopy));
+                return ExtractServiceResponse<ImageRecord>(actionResult.Result);
+            });
+        }
+
+
+        public async Task<ServiceResponse<ImageRecord>> GetImageRecordAsync(string accountName, string imageName)
+        {
+            return await Task.Run(async () =>
+            {
+                var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
+                var actionResult = await InvokeControllerAction(async () => await controller.GetImageRecord(accountName, imageName));
                 return ExtractServiceResponse<ImageRecord>(actionResult.Result);
             });
         }
@@ -72,38 +84,45 @@ namespace PetImagesTest.Clients
             });
         }
 
+        public async Task<ServiceResponse<byte[]>> GetImageThumbnailAsync(string accountName, string imageName)
+        {
+            return await Task.Run(async () =>
+            {
+                var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
+                var actionResult = await InvokeControllerAction(async () => await controller.GetImageThumbailAsync(accountName, imageName));
+                return ExtractServiceResponse<byte[]>(actionResult.Result);
+            });
+        }
+
         /// <summary>
         /// Simulate middleware by wrapping invocation of controller in exception handling
         /// code which runs in middleware in production.
         /// </summary>
         private static async Task<ActionResult<T>> InvokeControllerAction<T>(Func<Task<ActionResult<T>>> lambda)
         {
-            try
-            {
-                return await lambda();
-            }
-            catch (SimulatedDatabaseFaultException)
-            {
-                return new ActionResult<T>(new StatusCodeResult((int)HttpStatusCode.ServiceUnavailable));
-            }
+            return await lambda();
         }
 
         private static ServiceResponse<T> ExtractServiceResponse<T>(ActionResult<T> actionResult)
+            where T : class
         {
             var response = actionResult.Result;
-            if (response is OkObjectResult okObjectResult)
+            if (response is ObjectResult objectResult)
             {
+                var success = objectResult.StatusCode >= 200 && objectResult.StatusCode <= 299;
+
                 return new ServiceResponse<T>()
                 {
-                    StatusCode = (HttpStatusCode)okObjectResult.StatusCode,
-                    Resource = (T)okObjectResult.Value
+                    StatusCode = (HttpStatusCode)objectResult.StatusCode,
+                    Resource = success ? (T)objectResult.Value : null,
+                    Error = !success ? (Error)objectResult.Value : null
                 };
             }
             else if (response is StatusCodeResult statusCodeResult)
             {
                 return new ServiceResponse<T>()
                 {
-                    StatusCode = (HttpStatusCode)statusCodeResult.StatusCode
+                    StatusCode = (HttpStatusCode)statusCodeResult.StatusCode,
                 };
             }
             else

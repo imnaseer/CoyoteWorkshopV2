@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using PetImages.Contracts;
 using PetImages.Entities;
+using PetImages.Exceptions;
 using PetImages.Messaging;
 using PetImages.Messaging.Worker;
 using PetImages.Storage;
@@ -33,13 +34,14 @@ namespace PetImages.Worker
 
             var accountName = thumbnailMessage.AccountName;
             var imageName = thumbnailMessage.ImageName;
+            var requestId = thumbnailMessage.RequestId;
 
             var maybeImageRecordItem = await CosmosHelper.GetItemIfExists<ImageRecordItem>(
                 this.ImageRecordContainer,
                 partitionKey: imageName,
                 id: imageName);
 
-            if (maybeImageRecordItem == null)
+            if (maybeImageRecordItem == null || maybeImageRecordItem.LastTouchedByRequestId != requestId)
             {
                 return new WorkerResult
                 {
@@ -64,7 +66,20 @@ namespace PetImages.Worker
 
             maybeImageRecordItem.ThumbnailBlobName = thumbnailBlobName;
             maybeImageRecordItem.State = ImageRecordState.Created.ToString();
-            await this.ImageRecordContainer.ReplaceItem(maybeImageRecordItem, ifMatchEtag: maybeImageRecordItem.ETag);
+
+            try
+            {
+                await this.ImageRecordContainer.ReplaceItem(maybeImageRecordItem, ifMatchEtag: maybeImageRecordItem.ETag);
+            }
+            catch (DatabasePreconditionFailedException)
+            {
+                return new WorkerResult
+                {
+                    ResultCode = WorkerResultCode.Enabled,
+                    Message = "Needs Retry.",
+                };
+            }
+
             return new WorkerResult
             {
                 ResultCode = WorkerResultCode.Completed,
