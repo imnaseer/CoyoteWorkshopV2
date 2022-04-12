@@ -3,7 +3,6 @@
 
 using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
-using PetImages.Entities;
 
 namespace PetImages.Storage
 {
