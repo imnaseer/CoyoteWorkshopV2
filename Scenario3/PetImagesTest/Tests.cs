@@ -27,7 +27,7 @@ namespace PetImagesTest.Clients
     [TestClass]
     public class Tests
     {
-        private static bool useInMemoryClient = false;
+        private static bool useInMemoryClient = true;
 
         [TestMethod]
         public async Task TestFirstScenario()
@@ -41,41 +41,6 @@ namespace PetImagesTest.Clients
             };
 
             // Call CreateAccount twice without awaiting, which makes both methods run
-            // asynchronously with each other.
-            var task1 = serviceClient.CreateAccountAsync(account);
-            var task2 = serviceClient.CreateAccountAsync(account);
-
-            // Then wait both requests to complete.
-            await Task.WhenAll(task1, task2);
-
-            var statusCode1 = task1.Result.StatusCode;
-            var statusCode2 = task2.Result.StatusCode;
-
-            // Finally, assert that only one of the two requests succeeded and the other
-            // failed. Note that we do not know which one of the two succeeded as the
-            // requests ran concurrently (this is why we use an exclusive OR).
-            Assert.IsTrue(
-                (statusCode1 == HttpStatusCode.OK && statusCode2 == HttpStatusCode.Conflict) ||
-                (statusCode1 == HttpStatusCode.Conflict && statusCode2 == HttpStatusCode.OK));
-        }
-
-        [TestMethod]
-        public async Task TestFirstScenarioAlternative()
-        {
-            // Initialize the in-memory service factory.
-            using var factory = new ServiceFactory();
-            await factory.InitializeAccountContainerAsync();
-            await factory.InitializeImageContainerAsync();
-            await factory.InitializeMessagingClient();
-
-            using var serviceClient = new TestServiceClient(factory);
-
-            // Create an account request payload
-            var account = new Account()
-            {
-                Name = "MyAccount"
-            };
-            // Call 'CreateAccount' twice without awaiting, which makes both methods run
             // asynchronously with each other.
             var task1 = serviceClient.CreateAccountAsync(account);
             var task2 = serviceClient.CreateAccountAsync(account);
@@ -360,10 +325,10 @@ namespace PetImagesTest.Clients
 
             try
             {
-                var imageRecordResult = await serviceClient.CreateOrUpdateImageAsync(
+                var _ = await serviceClient.CreateOrUpdateImageAsync(
                     accountName,
                     new ImageRecord() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
-                Assert.IsTrue(imageRecordResult.StatusCode == HttpStatusCode.OK);
+                Assert.IsTrue(_.StatusCode == HttpStatusCode.OK);
             }
             catch (SimulatedRandomFaultException)
             {
@@ -371,20 +336,22 @@ namespace PetImagesTest.Clients
 
             randomizedFaultPolicy.ShouldRandomlyFail = false;
 
-            ImageRecord imageRecord;
-            while (true)
-            {
-                var imageRecordResult = await serviceClient.GetImageRecordAsync(accountName, imageName);
-                Assert.IsTrue(
+            var imageRecordResult = await serviceClient.GetImageRecordAsync(accountName, imageName);
+            Assert.IsTrue(
                     imageRecordResult.StatusCode == HttpStatusCode.OK ||
                     imageRecordResult.StatusCode == HttpStatusCode.NotFound);
 
-                if (imageRecordResult.StatusCode == HttpStatusCode.NotFound)
-                {
-                    break;
-                }
+            if (imageRecordResult.StatusCode == HttpStatusCode.NotFound)
+            {
+                return;
+            }
 
-                imageRecord = imageRecordResult.Resource;
+            while (true)
+            {
+                imageRecordResult = await serviceClient.GetImageRecordAsync(accountName, imageName);
+                Assert.IsTrue(imageRecordResult.StatusCode == HttpStatusCode.OK);
+
+                var imageRecord = imageRecordResult.Resource;
                 if (imageRecord.State == ImageRecordState.Created.ToString())
                 {
                     break;
@@ -398,12 +365,6 @@ namespace PetImagesTest.Clients
         public void SystematicTestFirstScenario()
         {
             RunSystematicTest(TestFirstScenario);
-        }
-
-        [TestMethod]
-        public void SystematicTestFirstScenarioAlternative()
-        {
-            RunSystematicTest(TestFirstScenarioAlternative);
         }
 
         [TestMethod]
@@ -495,7 +456,7 @@ namespace PetImagesTest.Clients
             var config = Configuration
                 .Create()
                 .WithMaxSchedulingSteps(5000)
-                .WithTestingIterations(3);
+                .WithTestingIterations(useInMemoryClient ? (uint)1000 : 100);
 
             if (reproducibleScheduleFilePath != null)
             {
@@ -538,6 +499,8 @@ namespace PetImagesTest.Clients
                 }
 
                 Assert.IsTrue(testingEngine.TestReport.NumOfFoundBugs == 0, assertionText);
+
+                Console.WriteLine(testingEngine.TestReport.GetText(config));
             }
             finally
             {

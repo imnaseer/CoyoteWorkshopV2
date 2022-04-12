@@ -75,7 +75,7 @@ namespace PetImages.Worker
             {
                 return new WorkerResult
                 {
-                    ResultCode = WorkerResultCode.Enabled,
+                    ResultCode = WorkerResultCode.Retry,
                     Message = "Needs Retry.",
                 };
             }

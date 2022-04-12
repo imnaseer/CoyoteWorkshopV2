@@ -15,7 +15,7 @@ using PetImages.Storage;
 using PetImagesTest.MessagingMocks;
 using PetImagesTest.StorageMocks;
 
-namespace PetImagesTest.Clients
+namespace PetImagesTest
 {
     internal class ServiceFactory : WebApplicationFactory<Startup>
     {

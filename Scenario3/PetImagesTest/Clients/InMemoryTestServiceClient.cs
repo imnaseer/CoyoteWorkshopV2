@@ -63,7 +63,6 @@ namespace PetImagesTest.Clients
             });
         }
 
-
         public async Task<ServiceResponse<ImageRecord>> GetImageRecordAsync(string accountName, string imageName)
         {
             return await Task.Run(async () =>

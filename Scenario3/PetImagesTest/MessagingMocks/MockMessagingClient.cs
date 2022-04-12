@@ -63,7 +63,7 @@ namespace PetImagesTest.MessagingMocks
                 {
                 }
             }
-            while (workerResult == null || workerResult.ResultCode == WorkerResultCode.Enabled);
+            while (workerResult == null || workerResult.ResultCode == WorkerResultCode.Retry);
 
             return workerResult;
         }
