@@ -30,7 +30,7 @@ namespace PetImagesTest.Clients
         public async Task<ServiceResponse<Account>> CreateAccountAsync(Account account)
         {
             var response = await this.Client.PostAsync(
-                new Uri($"Account", UriKind.RelativeOrAbsolute),
+                new Uri($"accounts", UriKind.RelativeOrAbsolute),
                 JsonContent.Create(account));
 
             return await ConstructServiceResponse<Account>(response);
@@ -39,7 +39,7 @@ namespace PetImagesTest.Clients
         public async Task<ServiceResponse<Image>> CreateOrUpdateImageAsync(string accountName, Image image)
         {
             var response = await this.Client.PostAsync(
-                new Uri($"Image/{accountName}", UriKind.RelativeOrAbsolute),
+                new Uri($"accounts/{accountName}/images", UriKind.RelativeOrAbsolute),
                 JsonContent.Create(image));
 
             return await ConstructServiceResponse<Image>(response);
@@ -48,7 +48,7 @@ namespace PetImagesTest.Clients
         public async Task<ServiceResponse<Image>> GetImageAsync(string accountName, string imageName)
         {
             var response = await this.Client.GetAsync(
-                new Uri($"Image/{accountName}/{imageName}", UriKind.RelativeOrAbsolute));
+                new Uri($"accounts/{accountName}/images/{imageName}", UriKind.RelativeOrAbsolute));
 
             return await ConstructServiceResponse<Image>(response);
         }
@@ -56,7 +56,7 @@ namespace PetImagesTest.Clients
         public async Task<ServiceResponse<byte[]>> GetImageContentAsync(string accountName, string imageName)
         {
             var response = await this.Client.GetAsync(
-                new Uri($"Image/{accountName}/{imageName}/content", UriKind.RelativeOrAbsolute));
+                new Uri($"accounts/{accountName}/images/{imageName}/content", UriKind.RelativeOrAbsolute));
 
             return await ConstructServiceResponse<byte[]>(response);
         }
@@ -64,7 +64,7 @@ namespace PetImagesTest.Clients
         public async Task<ServiceResponse<byte[]>> GetImageThumbnailAsync(string accountName, string imageName)
         {
             var response = await this.Client.GetAsync(
-                new Uri($"Image/{accountName}/{imageName}/thumbnail", UriKind.RelativeOrAbsolute));
+                new Uri($"accounts/{accountName}/images/{imageName}/thumbnail", UriKind.RelativeOrAbsolute));
 
             return await ConstructServiceResponse<byte[]>(response);
         }

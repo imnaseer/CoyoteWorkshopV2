@@ -27,7 +27,7 @@ namespace PetImagesTest.Clients
     [TestClass]
     public class Tests
     {
-        private static bool useInMemoryClient = true;
+        private static bool useInMemoryClient = false;
 
         [TestMethod]
         public async Task TestFirstScenario()

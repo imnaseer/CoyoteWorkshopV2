@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 namespace PetImages.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
     public class ImageController : ControllerBase
     {
         private readonly ICosmosContainer AccountContainer;
@@ -36,7 +35,8 @@ namespace PetImages.Controllers
         /// <summary>
         /// ...
         /// </summary>
-        [HttpPost("{accountName}")]
+        [HttpPost]
+        [Route(Routes.Images)]
         [NonAction]
         public async Task<ActionResult<Image>> CreateImageSecondScenarioAsync(
             [FromRoute] string accountName,
@@ -91,7 +91,8 @@ namespace PetImages.Controllers
         /// <summary>
         /// ...
         /// </summary>
-        [HttpPost("{accountName}")]
+        [HttpPost]
+        [Route(Routes.Images)]
         [NonAction]
         public async Task<ActionResult<Image>> CreateImageThirdScenarioBuggyAsync(string accountName, Image image)
         {
@@ -151,7 +152,8 @@ namespace PetImages.Controllers
         /// <summary>
         /// ...
         /// </summary>
-        [HttpPost("{accountName}")]
+        [HttpPost]
+        [Route(Routes.Images)]
         [NonAction]
         public async Task<ActionResult<Image>> CreateImageThirdScenarioFixedAsync(string accountName, Image image)
         {
@@ -212,7 +214,8 @@ namespace PetImages.Controllers
         /// <summary>
         /// ...
         /// </summary>
-        [HttpPost("{accountName}")]
+        [HttpPost]
+        [Route(Routes.Images)]
         public async Task<ActionResult<Image>> CreateImageFourthScenarioAsync(string accountName, Image image)
         {
             var maybeError = await ValidateImageAsync(accountName, image);
@@ -279,7 +282,8 @@ namespace PetImages.Controllers
             return this.Ok(imageItem.ToImage());
         }
 
-        [HttpGet("{accountName}/{imageName}")]
+        [HttpGet]
+        [Route(Routes.ImageInstance)]
         public async Task<ActionResult<Image>> GetImage(
             [FromRoute] string accountName,
             [FromRoute] string imageName)
@@ -301,7 +305,8 @@ namespace PetImages.Controllers
             }
         }
 
-        [HttpDelete("{accountName}/{imageName}")]
+        [HttpDelete]
+        [Route(Routes.ImageInstance)]
         public async Task<ActionResult> DeleteImage(string accountName, string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);
@@ -326,7 +331,8 @@ namespace PetImages.Controllers
         }
 
         // TODO: Fix this, its an action
-        [HttpGet("{accountName}/{imageName}/content")]
+        [HttpGet]
+        [Route(Routes.ImageContentInstance)]
         public async Task<ActionResult<byte[]>> GetImageContentsAsync(
             [FromRoute] string accountName,
             [FromRoute] string imageName)
@@ -355,7 +361,8 @@ namespace PetImages.Controllers
             }
         }
 
-        [HttpGet("{accountName}/{imageName}/thumbnail")]
+        [HttpGet]
+        [Route(Routes.ImageThumbnailInstance)]
         public async Task<ActionResult<byte[]>> GetImageThumbailAsync(
             [FromRoute] string accountName,
             [FromRoute] string imageName)

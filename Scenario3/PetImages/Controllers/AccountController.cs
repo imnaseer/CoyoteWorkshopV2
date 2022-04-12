@@ -11,7 +11,6 @@ using PetImages.Storage;
 namespace PetImages.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
     public class AccountController : ControllerBase
     {
         private readonly IAccountContainer AccountContainer;
@@ -25,6 +24,7 @@ namespace PetImages.Controllers
         /// CreateAccountAsync fixed.
         /// </summary>
         [HttpPost]
+        [Route(Routes.Accounts)]
         public async Task<ActionResult<Account>> CreateAccountAsync(Account account)
         {
             var maybeError = ValidateAccount(account);
@@ -47,12 +47,13 @@ namespace PetImages.Controllers
             return this.Ok(accountItem.ToAccount());
         }
 
-        [HttpGet("{name}")]
-        public async Task<ActionResult<Account>> GetAccountAsync([FromRoute] string name)
+        [HttpGet]
+        [Route(Routes.AccountInstance)]
+        public async Task<ActionResult<Account>> GetAccountAsync([FromRoute] string accountName)
         {
             try
             {
-                var accountItem = await this.AccountContainer.GetItem<AccountItem>(partitionKey: name, id: name);
+                var accountItem = await this.AccountContainer.GetItem<AccountItem>(partitionKey: accountName, id: accountName);
                 return this.Ok(accountItem.ToAccount());
             }
             catch (DatabaseItemDoesNotExistException)
@@ -61,12 +62,13 @@ namespace PetImages.Controllers
             }
         }
 
-        [HttpDelete("{name}")]
-        public async Task<ActionResult<Account>> DeleteAccountAsync([FromRoute] string name)
+        [HttpDelete]
+        [Route(Routes.AccountInstance)]
+        public async Task<ActionResult<Account>> DeleteAccountAsync([FromRoute] string accountName)
         {
             try
             {
-                await this.AccountContainer.DeleteItem(partitionKey: name, id: name);
+                await this.AccountContainer.DeleteItem(partitionKey: accountName, id: accountName);
                 return this.Ok();
             }
             catch (DatabaseItemDoesNotExistException)
@@ -79,6 +81,7 @@ namespace PetImages.Controllers
         /// CreateAccountAsync fixed.
         /// </summary>
         [HttpPost]
+        [Route(Routes.Accounts)]
         [NonAction]
         public async Task<ActionResult<Account>> CreateAccountAsyncIncorrect(Account account)
         {
