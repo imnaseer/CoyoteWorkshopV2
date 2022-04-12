@@ -10,7 +10,6 @@ using PetImages.Entities;
 using PetImages.Exceptions;
 using PetImages.Storage;
 using PetImages.Messaging;
-using System.Text;
 
 namespace PetImages.Controllers
 {

@@ -1,13 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
 using PetImages.Entities;
 using PetImages.Exceptions;
-using PetImages.Messaging;
 using PetImages.Storage;
 
 namespace PetImages.Controllers

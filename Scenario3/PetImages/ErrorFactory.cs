@@ -1,9 +1,6 @@
 ﻿namespace PetImages
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading.Tasks;
     using PetImages.Contracts;
 
     public class ErrorFactory
