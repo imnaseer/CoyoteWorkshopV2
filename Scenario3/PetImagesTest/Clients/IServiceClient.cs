@@ -10,11 +10,11 @@ namespace PetImagesTest.Clients
     {
         public Task<ServiceResponse<Account>> CreateAccountAsync(Account account);
 
-        public Task<ServiceResponse<ImageRecord>> CreateOrUpdateImageAsync(string accountName, ImageRecord image);
+        public Task<ServiceResponse<Image>> CreateOrUpdateImageAsync(string accountName, Image image);
 
-        public Task<ServiceResponse<ImageRecord>> GetImageRecordAsync(string accountName, string imageName);
+        public Task<ServiceResponse<Image>> GetImageAsync(string accountName, string imageName);
 
-        public Task<ServiceResponse<byte[]>> GetImageAsync(string accountName, string imageName);
+        public Task<ServiceResponse<byte[]>> GetImageContentAsync(string accountName, string imageName);
 
         public Task<ServiceResponse<byte[]>> GetImageThumbnailAsync(string accountName, string imageName);
     }

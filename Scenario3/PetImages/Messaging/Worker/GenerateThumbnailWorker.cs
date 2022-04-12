@@ -15,16 +15,16 @@ namespace PetImages.Worker
     public class GenerateThumbnailWorker : IWorker
     {
         private readonly ICosmosContainer AccountContainer;
-        private readonly ICosmosContainer ImageRecordContainer;
+        private readonly ICosmosContainer ImageContainer;
         private readonly IStorageAccount StorageAccount;
 
         public GenerateThumbnailWorker(
             IAccountContainer accountContainer,
-            IImageContainer imageRecordContainer,
+            IImageContainer imageContainer,
             IStorageAccount storageAccount)
         {
             this.AccountContainer = accountContainer;
-            this.ImageRecordContainer = imageRecordContainer;
+            this.ImageContainer = imageContainer;
             this.StorageAccount = storageAccount;
         }
 
@@ -36,12 +36,12 @@ namespace PetImages.Worker
             var imageName = thumbnailMessage.ImageName;
             var requestId = thumbnailMessage.RequestId;
 
-            var maybeImageRecordItem = await CosmosHelper.GetItemIfExists<ImageRecordItem>(
-                this.ImageRecordContainer,
+            var maybeImageItem = await CosmosHelper.GetItemIfExists<ImageItem>(
+                this.ImageContainer,
                 partitionKey: imageName,
                 id: imageName);
 
-            if (maybeImageRecordItem == null || maybeImageRecordItem.LastTouchedByRequestId != requestId)
+            if (maybeImageItem == null || maybeImageItem.LastTouchedByRequestId != requestId)
             {
                 return new WorkerResult
                 {
@@ -50,7 +50,7 @@ namespace PetImages.Worker
                 };
             }
 
-            var maybeImageBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, maybeImageRecordItem.BlobName);
+            var maybeImageBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, maybeImageItem.BlobName);
             if (maybeImageBytes == null)
             {
                 return new WorkerResult
@@ -64,12 +64,12 @@ namespace PetImages.Worker
             var thumbnailBlobName = Guid.NewGuid().ToString();
             await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, thumbnailBlobName, "image/jpeg", thumbnailBytes);
 
-            maybeImageRecordItem.ThumbnailBlobName = thumbnailBlobName;
-            maybeImageRecordItem.State = ImageRecordState.Created.ToString();
+            maybeImageItem.ThumbnailBlobName = thumbnailBlobName;
+            maybeImageItem.State = ImageState.Created.ToString();
 
             try
             {
-                await this.ImageRecordContainer.ReplaceItem(maybeImageRecordItem, ifMatchEtag: maybeImageRecordItem.ETag);
+                await this.ImageContainer.ReplaceItem(maybeImageItem, ifMatchEtag: maybeImageItem.ETag);
             }
             catch (DatabasePreconditionFailedException)
             {

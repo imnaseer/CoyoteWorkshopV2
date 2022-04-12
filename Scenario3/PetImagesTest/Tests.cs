@@ -79,7 +79,7 @@ namespace PetImagesTest.Clients
 
             var createResult = await serviceClient.CreateOrUpdateImageAsync(
                 accountName,
-                new ImageRecord()
+                new Image()
                 {
                     Name = imageName,
                     ContentType = contentType,
@@ -92,7 +92,7 @@ namespace PetImagesTest.Clients
 
             var updateResult1 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
-                new ImageRecord()
+                new Image()
                 {
                     Name = imageName,
                     ContentType = contentType,
@@ -101,7 +101,7 @@ namespace PetImagesTest.Clients
                 });
             var updateResult2 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
-                new ImageRecord()
+                new Image()
                 {
                     Name = imageName,
                     ContentType = contentType,
@@ -143,7 +143,7 @@ namespace PetImagesTest.Clients
 
             var createResult1 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
-                new ImageRecord()
+                new Image()
                 {
                     Name = imageName,
                     ContentType = contentType,
@@ -152,7 +152,7 @@ namespace PetImagesTest.Clients
                 });
             var createResult2 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
-                new ImageRecord()
+                new Image()
                 {
                     Name = imageName,
                     ContentType = contentType,
@@ -192,10 +192,10 @@ namespace PetImagesTest.Clients
 
             var task1 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
-                new ImageRecord() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
+                new Image() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
             var task2 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
-                new ImageRecord() { Name = imageName, ContentType = contentType, Content = GetCatImageBytes() });
+                new Image() { Name = imageName, ContentType = contentType, Content = GetCatImageBytes() });
 
             await Task.WhenAll(task1, task2);
 
@@ -207,7 +207,7 @@ namespace PetImagesTest.Clients
                 (statusCode1 == HttpStatusCode.Conflict && statusCode2 == HttpStatusCode.OK) ||
                 (statusCode1 == HttpStatusCode.OK && statusCode2 == HttpStatusCode.OK));
 
-            var imageContentResult = await serviceClient.GetImageAsync(accountName, imageName);
+            var imageContentResult = await serviceClient.GetImageContentAsync(accountName, imageName);
             Assert.IsTrue(imageContentResult.StatusCode == HttpStatusCode.OK);
 
             if (statusCode1 == HttpStatusCode.OK && statusCode2 != HttpStatusCode.OK)
@@ -246,10 +246,10 @@ namespace PetImagesTest.Clients
 
             var task1 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
-                new ImageRecord() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
+                new Image() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
             var task2 = serviceClient.CreateOrUpdateImageAsync(
                 accountName,
-                new ImageRecord() { Name = imageName, ContentType = contentType, Content = GetCatImageBytes() });
+                new Image() { Name = imageName, ContentType = contentType, Content = GetCatImageBytes() });
 
             await Task.WhenAll(task1, task2);
 
@@ -261,14 +261,14 @@ namespace PetImagesTest.Clients
                 (statusCode1 == HttpStatusCode.Conflict && statusCode2 == HttpStatusCode.OK) ||
                 (statusCode1 == HttpStatusCode.OK && statusCode2 == HttpStatusCode.OK));
 
-            ImageRecord imageRecord;
+            Image image;
             while (true)
             {
-                var imageRecordResult = await serviceClient.GetImageRecordAsync(accountName, imageName);
-                Assert.IsTrue(imageRecordResult.StatusCode == HttpStatusCode.OK);
+                var imageResult = await serviceClient.GetImageAsync(accountName, imageName);
+                Assert.IsTrue(imageResult.StatusCode == HttpStatusCode.OK);
 
-                imageRecord = imageRecordResult.Resource;
-                if (imageRecord.State == ImageRecordState.Created.ToString())
+                image = imageResult.Resource;
+                if (image.State == ImageState.Created.ToString())
                 {
                     break;
                 }
@@ -276,28 +276,28 @@ namespace PetImagesTest.Clients
                 await Task.Delay(100);
             }
 
-            var imageContentResult = await serviceClient.GetImageAsync(accountName, imageName);
+            var imageContentResult = await serviceClient.GetImageContentAsync(accountName, imageName);
             Assert.IsTrue(imageContentResult.StatusCode == HttpStatusCode.OK);
 
             var thumbnailContentResult = await serviceClient.GetImageThumbnailAsync(accountName, imageName);
             Assert.IsTrue(thumbnailContentResult.StatusCode == HttpStatusCode.OK);
 
-            var image = imageContentResult.Resource;
+            var imageContent = imageContentResult.Resource;
             var thumbnail = thumbnailContentResult.Resource;
 
             if (statusCode1 == HttpStatusCode.OK && statusCode2 != HttpStatusCode.OK)
             {
-                Assert.IsTrue(IsDogImage(image) && IsDogThumbnail(thumbnail));
+                Assert.IsTrue(IsDogImage(imageContent) && IsDogThumbnail(thumbnail));
             }
             else if (statusCode1 != HttpStatusCode.OK && statusCode2 == HttpStatusCode.OK)
             {
-                Assert.IsTrue(IsCatImage(image) && IsCatThumbnail(thumbnail));
+                Assert.IsTrue(IsCatImage(imageContent) && IsCatThumbnail(thumbnail));
             }
             else
             {
                 Assert.IsTrue(
-                    (IsDogImage(image) && IsDogThumbnail(thumbnail)) ||
-                    (IsCatImage(image) && IsCatThumbnail(thumbnail)));
+                    (IsDogImage(imageContent) && IsDogThumbnail(thumbnail)) ||
+                    (IsCatImage(imageContent) && IsCatThumbnail(thumbnail)));
             }
         }
 
@@ -327,7 +327,7 @@ namespace PetImagesTest.Clients
             {
                 var _ = await serviceClient.CreateOrUpdateImageAsync(
                     accountName,
-                    new ImageRecord() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
+                    new Image() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
                 Assert.IsTrue(_.StatusCode == HttpStatusCode.OK);
             }
             catch (SimulatedRandomFaultException)
@@ -336,23 +336,23 @@ namespace PetImagesTest.Clients
 
             randomizedFaultPolicy.ShouldRandomlyFail = false;
 
-            var imageRecordResult = await serviceClient.GetImageRecordAsync(accountName, imageName);
+            var imageResult = await serviceClient.GetImageAsync(accountName, imageName);
             Assert.IsTrue(
-                    imageRecordResult.StatusCode == HttpStatusCode.OK ||
-                    imageRecordResult.StatusCode == HttpStatusCode.NotFound);
+                    imageResult.StatusCode == HttpStatusCode.OK ||
+                    imageResult.StatusCode == HttpStatusCode.NotFound);
 
-            if (imageRecordResult.StatusCode == HttpStatusCode.NotFound)
+            if (imageResult.StatusCode == HttpStatusCode.NotFound)
             {
                 return;
             }
 
             while (true)
             {
-                imageRecordResult = await serviceClient.GetImageRecordAsync(accountName, imageName);
-                Assert.IsTrue(imageRecordResult.StatusCode == HttpStatusCode.OK);
+                imageResult = await serviceClient.GetImageAsync(accountName, imageName);
+                Assert.IsTrue(imageResult.StatusCode == HttpStatusCode.OK);
 
-                var imageRecord = imageRecordResult.Resource;
-                if (imageRecord.State == ImageRecordState.Created.ToString())
+                var image = imageResult.Resource;
+                if (image.State == ImageState.Created.ToString())
                 {
                     break;
                 }

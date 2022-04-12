@@ -1,15 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
-using System.Security.Cryptography;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
 using PetImages.Entities;
 using PetImages.Exceptions;
-using PetImages.Storage;
 using PetImages.Messaging;
+using PetImages.Storage;
+using System;
+using System.Threading.Tasks;
 
 namespace PetImages.Controllers
 {
@@ -18,20 +17,18 @@ namespace PetImages.Controllers
     public class ImageController : ControllerBase
     {
         private readonly ICosmosContainer AccountContainer;
-        private readonly ICosmosContainer ImageRecordContainer;
+        private readonly ICosmosContainer ImageContainer;
         private readonly IStorageAccount StorageAccount;
         private readonly IMessagingClient MessagingClient;
 
-        private static HashAlgorithm hashAlgorithm = HashAlgorithm.Create("SHA-256");
-
         public ImageController(
             IAccountContainer accountContainer,
-            IImageContainer imageRecordContainer,
+            IImageContainer imageContainer,
             IStorageAccount storageAccount,
             IMessagingClient messagingClient)
         {
             this.AccountContainer = accountContainer;
-            this.ImageRecordContainer = imageRecordContainer;
+            this.ImageContainer = imageContainer;
             this.StorageAccount = storageAccount;
             this.MessagingClient = messagingClient;
         }
@@ -41,28 +38,28 @@ namespace PetImages.Controllers
         /// </summary>
         [HttpPost("{accountName}")]
         [NonAction]
-        public async Task<ActionResult<ImageRecord>> CreateImageRecordSecondScenarioAsync(
+        public async Task<ActionResult<Image>> CreateImageSecondScenarioAsync(
             [FromRoute] string accountName,
-            [FromBody] ImageRecord imageRecord)
+            [FromBody] Image image)
         {
-            var maybeError = await ValidateImageRecordAsync(accountName, imageRecord);
+            var maybeError = await ValidateImageAsync(accountName, image);
             if (maybeError != null)
             {
                 return this.BadRequest(maybeError);
             }
 
-            var imageRecordItem = imageRecord.ToImageRecordItem();
+            var imageItem = image.ToImageItem();
 
-            var maybeExistingImageRecordItem = await CosmosHelper.GetItemIfExists<ImageRecordItem>(
-                ImageRecordContainer,
-                imageRecordItem.PartitionKey,
-                imageRecordItem.Id);
+            var maybeExistingImageItem = await CosmosHelper.GetItemIfExists<ImageItem>(
+                ImageContainer,
+                imageItem.PartitionKey,
+                imageItem.Id);
 
-            if (maybeExistingImageRecordItem == null)
+            if (maybeExistingImageItem == null)
             {
                 try
                 {
-                    imageRecordItem = await this.ImageRecordContainer.CreateItem(imageRecordItem);
+                    imageItem = await this.ImageContainer.CreateItem(imageItem);
                 }
                 catch (DatabaseItemAlreadyExistsException)
                 {
@@ -71,16 +68,16 @@ namespace PetImages.Controllers
             }
             else
             {
-                if (imageRecordItem.LastModifiedTimestamp < maybeExistingImageRecordItem.LastModifiedTimestamp)
+                if (imageItem.LastModifiedTimestamp < maybeExistingImageItem.LastModifiedTimestamp)
                 {
                     return this.BadRequest(ErrorFactory.StaleLastModifiedTime(
-                        imageRecordItem.LastModifiedTimestamp,
-                        maybeExistingImageRecordItem.LastModifiedTimestamp));
+                        imageItem.LastModifiedTimestamp,
+                        maybeExistingImageItem.LastModifiedTimestamp));
                 }
 
                 try
                 {
-                    await this.ImageRecordContainer.UpsertItem(imageRecordItem, maybeExistingImageRecordItem.ETag);
+                    await this.ImageContainer.UpsertItem(imageItem, maybeExistingImageItem.ETag);
                 }
                 catch (DatabasePreconditionFailedException)
                 {
@@ -88,7 +85,7 @@ namespace PetImages.Controllers
                 }
             }
 
-            return this.Ok(imageRecordItem.ToImageRecord());
+            return this.Ok(imageItem.ToImage());
         }
 
         /// <summary>
@@ -96,9 +93,9 @@ namespace PetImages.Controllers
         /// </summary>
         [HttpPost("{accountName}")]
         [NonAction]
-        public async Task<ActionResult<ImageRecord>> CreateImageRecordThirdScenarioBuggyAsync(string accountName, ImageRecord imageRecord)
+        public async Task<ActionResult<Image>> CreateImageThirdScenarioBuggyAsync(string accountName, Image image)
         {
-            var maybeError = await ValidateImageRecordAsync(accountName, imageRecord);
+            var maybeError = await ValidateImageAsync(accountName, image);
             if (maybeError != null)
             {
                 return this.BadRequest(maybeError);
@@ -109,20 +106,20 @@ namespace PetImages.Controllers
             // Note: we're calling CreateOrUpdateBlobAsync because Azure Storage doesn't
             // have a create-only API.
             await StorageHelper.CreateContainerIfNotExists(this.StorageAccount, accountName);
-            await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageRecord.Name, imageRecord.ContentType, imageRecord.Content);
+            await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, image.Name, image.ContentType, image.Content);
 
-            var imageRecordItem = imageRecord.ToImageRecordItem();
-            imageRecordItem.BlobName = imageRecord.Name; // TODO: Remove this line in workshop code
-            var maybeExistingImageRecordItem = await CosmosHelper.GetItemIfExists<ImageRecordItem>(
-                ImageRecordContainer,
-                imageRecordItem.PartitionKey,
-                imageRecordItem.Id);
+            var imageItem = image.ToImageItem();
+            imageItem.BlobName = image.Name; // TODO: Remove this line in workshop code
+            var maybeExistingImageItem = await CosmosHelper.GetItemIfExists<ImageItem>(
+                ImageContainer,
+                imageItem.PartitionKey,
+                imageItem.Id);
 
-            if (maybeExistingImageRecordItem == null)
+            if (maybeExistingImageItem == null)
             {
                 try
                 {
-                    imageRecordItem = await this.ImageRecordContainer.CreateItem(imageRecordItem);
+                    imageItem = await this.ImageContainer.CreateItem(imageItem);
                 }
                 catch (DatabaseItemAlreadyExistsException)
                 {
@@ -131,16 +128,16 @@ namespace PetImages.Controllers
             }
             else
             {
-                if (imageRecordItem.LastModifiedTimestamp < maybeExistingImageRecordItem.LastModifiedTimestamp)
+                if (imageItem.LastModifiedTimestamp < maybeExistingImageItem.LastModifiedTimestamp)
                 {
                     return this.BadRequest(ErrorFactory.StaleLastModifiedTime(
-                        imageRecordItem.LastModifiedTimestamp,
-                        maybeExistingImageRecordItem.LastModifiedTimestamp));
+                        imageItem.LastModifiedTimestamp,
+                        maybeExistingImageItem.LastModifiedTimestamp));
                 }
 
                 try
                 {
-                    await this.ImageRecordContainer.UpsertItem(imageRecordItem, maybeExistingImageRecordItem.ETag);
+                    await this.ImageContainer.UpsertItem(imageItem, maybeExistingImageItem.ETag);
                 }
                 catch (DatabasePreconditionFailedException)
                 {
@@ -148,7 +145,7 @@ namespace PetImages.Controllers
                 }
             }
 
-            return this.Ok(imageRecordItem.ToImageRecord());
+            return this.Ok(imageItem.ToImage());
         }
 
         /// <summary>
@@ -156,15 +153,15 @@ namespace PetImages.Controllers
         /// </summary>
         [HttpPost("{accountName}")]
         [NonAction]
-        public async Task<ActionResult<ImageRecord>> CreateImageRecordThirdScenarioFixedAsync(string accountName, ImageRecord imageRecord)
+        public async Task<ActionResult<Image>> CreateImageThirdScenarioFixedAsync(string accountName, Image image)
         {
-            var maybeError = await ValidateImageRecordAsync(accountName, imageRecord);
+            var maybeError = await ValidateImageAsync(accountName, image);
             if (maybeError != null)
             {
                 return this.BadRequest(maybeError);
             }
 
-            var imageRecordItem = imageRecord.ToImageRecordItem(
+            var imageItem = image.ToImageItem(
                 blobName: Guid.NewGuid().ToString());
 
             // We upload the image to Azure Storage, before adding an entry to Cosmos DB
@@ -172,18 +169,18 @@ namespace PetImages.Controllers
             // Note: we're calling CreateOrUpdateBlobAsync because Azure Storage doesn't
             // have a create-only API.
             await StorageHelper.CreateContainerIfNotExists(this.StorageAccount, accountName);
-            await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageRecordItem.BlobName, imageRecord.ContentType, imageRecord.Content);
+            await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageItem.BlobName, image.ContentType, image.Content);
 
-            var maybeExistingImageRecordItem = await CosmosHelper.GetItemIfExists<ImageRecordItem>(
-                ImageRecordContainer,
-                imageRecordItem.PartitionKey,
-                imageRecordItem.Id);
+            var maybeExistingImageItem = await CosmosHelper.GetItemIfExists<ImageItem>(
+                ImageContainer,
+                imageItem.PartitionKey,
+                imageItem.Id);
 
-            if (maybeExistingImageRecordItem == null)
+            if (maybeExistingImageItem == null)
             {
                 try
                 {
-                    imageRecordItem = await this.ImageRecordContainer.CreateItem(imageRecordItem);
+                    imageItem = await this.ImageContainer.CreateItem(imageItem);
                 }
                 catch (DatabaseItemAlreadyExistsException)
                 {
@@ -192,16 +189,16 @@ namespace PetImages.Controllers
             }
             else
             {
-                if (imageRecordItem.LastModifiedTimestamp < maybeExistingImageRecordItem.LastModifiedTimestamp)
+                if (imageItem.LastModifiedTimestamp < maybeExistingImageItem.LastModifiedTimestamp)
                 {
                     return this.BadRequest(ErrorFactory.StaleLastModifiedTime(
-                        imageRecordItem.LastModifiedTimestamp,
-                        maybeExistingImageRecordItem.LastModifiedTimestamp));
+                        imageItem.LastModifiedTimestamp,
+                        maybeExistingImageItem.LastModifiedTimestamp));
                 }
 
                 try
                 {
-                    await this.ImageRecordContainer.UpsertItem(imageRecordItem, maybeExistingImageRecordItem.ETag);
+                    await this.ImageContainer.UpsertItem(imageItem, maybeExistingImageItem.ETag);
                 }
                 catch (DatabasePreconditionFailedException)
                 {
@@ -209,16 +206,16 @@ namespace PetImages.Controllers
                 }
             }
 
-            return this.Ok(imageRecordItem.ToImageRecord());
+            return this.Ok(imageItem.ToImage());
         }
 
         /// <summary>
         /// ...
         /// </summary>
         [HttpPost("{accountName}")]
-        public async Task<ActionResult<ImageRecord>> CreateImageRecordFourthScenarioAsync(string accountName, ImageRecord imageRecord)
+        public async Task<ActionResult<Image>> CreateImageFourthScenarioAsync(string accountName, Image image)
         {
-            var maybeError = await ValidateImageRecordAsync(accountName, imageRecord);
+            var maybeError = await ValidateImageAsync(accountName, image);
             if (maybeError != null)
             {
                 return this.BadRequest(maybeError);
@@ -229,31 +226,31 @@ namespace PetImages.Controllers
             await this.MessagingClient.SubmitMessage(new GenerateThumbnailMessage()
             {
                 AccountName = accountName,
-                ImageName = imageRecord.Name,
+                ImageName = image.Name,
                 RequestId = requestId
             });
 
-            var imageRecordItem = imageRecord.ToImageRecordItem(blobName: Guid.NewGuid().ToString());
-            imageRecordItem.State = ImageRecordState.Creating.ToString();
-            imageRecordItem.LastTouchedByRequestId = requestId;
+            var imageItem = image.ToImageItem(blobName: Guid.NewGuid().ToString());
+            imageItem.State = ImageState.Creating.ToString();
+            imageItem.LastTouchedByRequestId = requestId;
 
             // We upload the image to Azure Storage, before adding an entry to Cosmos DB
             // so that it is guaranteed to be there when user does a GET request.
             // Note: we're calling CreateOrUpdateBlobAsync because Azure Storage doesn't
             // have a create-only API.
             await StorageHelper.CreateContainerIfNotExists(this.StorageAccount, accountName);
-            await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageRecordItem.BlobName, imageRecord.ContentType, imageRecord.Content);
+            await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageItem.BlobName, image.ContentType, image.Content);
 
-            var maybeExistingImageRecordItem = await CosmosHelper.GetItemIfExists<ImageRecordItem>(
-                ImageRecordContainer,
-                imageRecordItem.PartitionKey,
-                imageRecordItem.Id);
+            var maybeExistingImageItem = await CosmosHelper.GetItemIfExists<ImageItem>(
+                ImageContainer,
+                imageItem.PartitionKey,
+                imageItem.Id);
 
-            if (maybeExistingImageRecordItem == null)
+            if (maybeExistingImageItem == null)
             {
                 try
                 {
-                    imageRecordItem = await this.ImageRecordContainer.CreateItem(imageRecordItem);
+                    imageItem = await this.ImageContainer.CreateItem(imageItem);
                 }
                 catch (DatabaseItemAlreadyExistsException)
                 {
@@ -262,16 +259,16 @@ namespace PetImages.Controllers
             }
             else
             {
-                if (imageRecordItem.LastModifiedTimestamp < maybeExistingImageRecordItem.LastModifiedTimestamp)
+                if (imageItem.LastModifiedTimestamp < maybeExistingImageItem.LastModifiedTimestamp)
                 {
                     return this.BadRequest(ErrorFactory.StaleLastModifiedTime(
-                        imageRecordItem.LastModifiedTimestamp,
-                        maybeExistingImageRecordItem.LastModifiedTimestamp));
+                        imageItem.LastModifiedTimestamp,
+                        maybeExistingImageItem.LastModifiedTimestamp));
                 }
 
                 try
                 {
-                    await this.ImageRecordContainer.UpsertItem(imageRecordItem, maybeExistingImageRecordItem.ETag);
+                    await this.ImageContainer.UpsertItem(imageItem, maybeExistingImageItem.ETag);
                 }
                 catch (DatabasePreconditionFailedException)
                 {
@@ -279,11 +276,11 @@ namespace PetImages.Controllers
                 }
             }
 
-            return this.Ok(imageRecordItem.ToImageRecord());
+            return this.Ok(imageItem.ToImage());
         }
 
         [HttpGet("{accountName}/{imageName}")]
-        public async Task<ActionResult<ImageRecord>> GetImageRecord(
+        public async Task<ActionResult<Image>> GetImage(
             [FromRoute] string accountName,
             [FromRoute] string imageName)
         {
@@ -295,8 +292,8 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageRecordItem = await this.ImageRecordContainer.GetItem<ImageRecordItem>(partitionKey: imageName, id: imageName);
-                return this.Ok(imageRecordItem.ToImageRecord());
+                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
+                return this.Ok(imageItem.ToImage());
             }
             catch (DatabaseItemDoesNotExistException)
             {
@@ -305,7 +302,7 @@ namespace PetImages.Controllers
         }
 
         [HttpDelete("{accountName}/{imageName}")]
-        public async Task<ActionResult> DeleteImageRecord(string accountName, string imageName)
+        public async Task<ActionResult> DeleteImage(string accountName, string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);
             if (maybeError != null)
@@ -315,10 +312,10 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageRecordItem = await this.ImageRecordContainer.GetItem<ImageRecordItem>(partitionKey: imageName, id: imageName);
-                
-                await this.ImageRecordContainer.DeleteItem(partitionKey: imageName, id: imageName);
-                await StorageHelper.DeleteBlobIfExists(this.StorageAccount, accountName, imageRecordItem.BlobName);
+                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
+
+                await this.ImageContainer.DeleteItem(partitionKey: imageName, id: imageName);
+                await StorageHelper.DeleteBlobIfExists(this.StorageAccount, accountName, imageItem.BlobName);
 
                 return this.Ok();
             }
@@ -342,8 +339,8 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageRecordItem = await this.ImageRecordContainer.GetItem<ImageRecordItem>(partitionKey: imageName, id: imageName);
-                var maybeBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, imageRecordItem.BlobName);
+                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
+                var maybeBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, imageItem.BlobName);
 
                 if (maybeBytes == null)
                 {
@@ -371,8 +368,8 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageRecordItem = await this.ImageRecordContainer.GetItem<ImageRecordItem>(partitionKey: imageName, id: imageName);
-                var maybeBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, imageRecordItem.ThumbnailBlobName);
+                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
+                var maybeBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, imageItem.ThumbnailBlobName);
 
                 if (maybeBytes == null)
                 {
@@ -387,7 +384,7 @@ namespace PetImages.Controllers
             }
         }
 
-        private async Task<Error> ValidateImageRecordAsync(string accountName, ImageRecord imageRecord)
+        private async Task<Error> ValidateImageAsync(string accountName, Image image)
         {
             var maybeError = await ValidateAccountAsync(accountName);
             if (maybeError != null)
@@ -395,24 +392,24 @@ namespace PetImages.Controllers
                 return maybeError;
             }
 
-            if (imageRecord == null)
+            if (image == null)
             {
-                return ErrorFactory.ParsingError(nameof(ImageRecord));
+                return ErrorFactory.ParsingError(nameof(Image));
             }
 
-            if (string.IsNullOrWhiteSpace(imageRecord.Name))
+            if (string.IsNullOrWhiteSpace(image.Name))
             {
-                return ErrorFactory.InvalidParameterValueError(nameof(ImageRecord.Name), imageRecord.Name);
+                return ErrorFactory.InvalidParameterValueError(nameof(Image.Name), image.Name);
             }
 
-            if (string.IsNullOrWhiteSpace(imageRecord.ContentType))
+            if (string.IsNullOrWhiteSpace(image.ContentType))
             {
-                return ErrorFactory.InvalidParameterValueError(nameof(ImageRecord.ContentType), imageRecord.ContentType);
+                return ErrorFactory.InvalidParameterValueError(nameof(Image.ContentType), image.ContentType);
             }
 
-            if (imageRecord.Content == null)
+            if (image.Content == null)
             {
-                return ErrorFactory.InvalidParameterValueError(nameof(ImageRecord.Content), imageRecord.Content);
+                return ErrorFactory.InvalidParameterValueError(nameof(Image.Content), image.Content);
             }
 
             return null;

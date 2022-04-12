@@ -36,24 +36,24 @@ namespace PetImagesTest.Clients
             return await ConstructServiceResponse<Account>(response);
         }
 
-        public async Task<ServiceResponse<ImageRecord>> CreateOrUpdateImageAsync(string accountName, ImageRecord imageRecord)
+        public async Task<ServiceResponse<Image>> CreateOrUpdateImageAsync(string accountName, Image image)
         {
             var response = await this.Client.PostAsync(
                 new Uri($"Image/{accountName}", UriKind.RelativeOrAbsolute),
-                JsonContent.Create(imageRecord));
+                JsonContent.Create(image));
 
-            return await ConstructServiceResponse<ImageRecord>(response);
+            return await ConstructServiceResponse<Image>(response);
         }
 
-        public async Task<ServiceResponse<ImageRecord>> GetImageRecordAsync(string accountName, string imageName)
+        public async Task<ServiceResponse<Image>> GetImageAsync(string accountName, string imageName)
         {
             var response = await this.Client.GetAsync(
                 new Uri($"Image/{accountName}/{imageName}", UriKind.RelativeOrAbsolute));
 
-            return await ConstructServiceResponse<ImageRecord>(response);
+            return await ConstructServiceResponse<Image>(response);
         }
 
-        public async Task<ServiceResponse<byte[]>> GetImageAsync(string accountName, string imageName)
+        public async Task<ServiceResponse<byte[]>> GetImageContentAsync(string accountName, string imageName)
         {
             var response = await this.Client.GetAsync(
                 new Uri($"Image/{accountName}/{imageName}/content", UriKind.RelativeOrAbsolute));

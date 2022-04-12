@@ -3,7 +3,7 @@
 		<AssemblyName>PetImages</AssemblyName>
 		<TargetFramework>net5.0</TargetFramework>
 		<OutputPath>.\bin\</OutputPath>
-		<EnableNETAnalyzers>true</EnableNETAnalyzers>
+		<EnableNETAnalyzers>false</EnableNETAnalyzers>
 		<AnalysisMode>all</AnalysisMode>
 		<AnalysisLevel>latest</AnalysisLevel>
 	</PropertyGroup>

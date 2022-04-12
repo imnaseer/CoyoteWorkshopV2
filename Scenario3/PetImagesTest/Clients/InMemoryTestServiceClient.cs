@@ -50,29 +50,29 @@ namespace PetImagesTest.Clients
             });
         }
 
-        public async Task<ServiceResponse<ImageRecord>> CreateOrUpdateImageAsync(string accountName, ImageRecord image)
+        public async Task<ServiceResponse<Image>> CreateOrUpdateImageAsync(string accountName, Image image)
         {
             var imageCopy = TestHelper.Clone(image);
 
             return await Task.Run(async () =>
             {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerAction(async () => await controller.CreateImageRecordFourthScenarioAsync(accountName, imageCopy));
-                return ExtractServiceResponse<ImageRecord>(actionResult.Result);
+                var actionResult = await InvokeControllerAction(async () => await controller.CreateImageFourthScenarioAsync(accountName, imageCopy));
+                return ExtractServiceResponse<Image>(actionResult.Result);
             });
         }
 
-        public async Task<ServiceResponse<ImageRecord>> GetImageRecordAsync(string accountName, string imageName)
+        public async Task<ServiceResponse<Image>> GetImageAsync(string accountName, string imageName)
         {
             return await Task.Run(async () =>
             {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerAction(async () => await controller.GetImageRecord(accountName, imageName));
-                return ExtractServiceResponse<ImageRecord>(actionResult.Result);
+                var actionResult = await InvokeControllerAction(async () => await controller.GetImage(accountName, imageName));
+                return ExtractServiceResponse<Image>(actionResult.Result);
             });
         }
 
-        public async Task<ServiceResponse<byte[]>> GetImageAsync(string accountName, string imageName)
+        public async Task<ServiceResponse<byte[]>> GetImageContentAsync(string accountName, string imageName)
         {
             return await Task.Run(async () =>
             {

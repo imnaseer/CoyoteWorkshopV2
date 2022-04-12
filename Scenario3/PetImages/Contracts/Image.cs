@@ -1,35 +1,35 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PetImages.Contracts;
+using PetImages.Entities;
 using System;
 
-namespace PetImages.Entities
+namespace PetImages.Contracts
 {
-    public class ImageRecordItem : DbItem
+    public enum ImageState { Creating, Created };
+
+    public class Image
     {
-        public override string PartitionKey => Id;
+        public string Name { get; set; }
 
         public string ContentType { get; set; }
 
-        public string BlobName { get; set; }
-
-        public string ThumbnailBlobName { get; set; }
-
         public string[] Tags { get; set; }
+
+        public byte[] Content { get; set; }
 
         public string State { get; set; }
 
         public DateTime LastModifiedTimestamp { get; set; }
 
-        public string LastTouchedByRequestId { get; set; }
-
-        public ImageRecord ToImageRecord()
+        public ImageItem ToImageItem(string blobName = null, string thumbnailBlobName = null)
         {
-            return new ImageRecord()
+            return new ImageItem()
             {
-                Name = Id,
+                Id = Name,
                 ContentType = ContentType,
+                BlobName = blobName,
+                ThumbnailBlobName = thumbnailBlobName,
                 Tags = Tags,
                 State = State,
                 LastModifiedTimestamp = LastModifiedTimestamp
