@@ -3,6 +3,9 @@
 		<AssemblyName>PetImages</AssemblyName>
 		<TargetFramework>net5.0</TargetFramework>
 		<OutputPath>.\bin\</OutputPath>
+		<EnableNETAnalyzers>true</EnableNETAnalyzers>
+		<AnalysisMode>all</AnalysisMode>
+		<AnalysisLevel>latest</AnalysisLevel>
 	</PropertyGroup>
 	<ItemGroup>
 	  <PackageReference Include="Azure.Storage.Blobs" Version="12.11.0" />
