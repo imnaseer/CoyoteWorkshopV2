@@ -67,7 +67,7 @@ namespace PetImagesTest.Clients
             return await Task.Run(async () =>
             {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerAction(async () => await controller.GetImage(accountName, imageName));
+                var actionResult = await InvokeControllerAction(async () => await controller.GetImageAsync(accountName, imageName));
                 return ExtractServiceResponse<Image>(actionResult.Result);
             });
         }

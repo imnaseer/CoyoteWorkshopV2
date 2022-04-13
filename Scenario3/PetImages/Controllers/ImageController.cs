@@ -284,7 +284,7 @@ namespace PetImages.Controllers
 
         [HttpGet]
         [Route(Routes.ImageInstance)]
-        public async Task<ActionResult<Image>> GetImage(
+        public async Task<ActionResult<Image>> GetImageAsync(
             [FromRoute] string accountName,
             [FromRoute] string imageName)
         {
@@ -307,7 +307,7 @@ namespace PetImages.Controllers
 
         [HttpDelete]
         [Route(Routes.ImageInstance)]
-        public async Task<ActionResult> DeleteImage(string accountName, string imageName)
+        public async Task<ActionResult> DeleteImageAsync(string accountName, string imageName)
         {
             var maybeError = await ValidateAccountAsync(accountName);
             if (maybeError != null)
