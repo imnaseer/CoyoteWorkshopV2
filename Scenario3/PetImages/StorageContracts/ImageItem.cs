@@ -8,7 +8,9 @@ namespace PetImages.Entities
 {
     public class ImageItem : DbItem
     {
-        public override string PartitionKey => Id;
+        public override string PartitionKey => AccountName;
+
+        public string AccountName { get; set; }
 
         public string ContentType { get; set; }
 

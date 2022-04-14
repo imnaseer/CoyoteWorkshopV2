@@ -21,7 +21,7 @@ namespace PetImages.Storage
 
         public async Task<T> CreateItem<T>(T row) where T : DbItem
         {
-            return await this.PerformCosmosOperationOrThrow<T>(
+            return await this.PerformCosmosOperationOrThrowAsync<T>(
                 () => this.cosmosContainer.CreateItemAsync(row));
         }
 
@@ -42,14 +42,14 @@ namespace PetImages.Storage
 
         public async Task<T> GetItem<T>(string partitionKey, string id) where T : DbItem
         {
-            return await this.PerformCosmosOperationOrThrow(() =>
+            return await this.PerformCosmosOperationOrThrowAsync(() =>
                 this.cosmosContainer.ReadItemAsync<T>(
                     id, new PartitionKey(partitionKey)));
         }
 
         public async Task<T> ReplaceItem<T>(T row, string ifMatchEtag = null) where T : DbItem
         {
-            return await this.PerformCosmosOperationOrThrow(() =>
+            return await this.PerformCosmosOperationOrThrowAsync(() =>
                 this.cosmosContainer.ReplaceItemAsync(
                     row,
                     row.Id,
@@ -59,14 +59,14 @@ namespace PetImages.Storage
 
         public async Task<T> UpsertItem<T>(T row, string ifMatchEtag = null) where T : DbItem
         {
-            return await this.PerformCosmosOperationOrThrow(() =>
+            return await this.PerformCosmosOperationOrThrowAsync(() =>
                 this.cosmosContainer.UpsertItemAsync(
                     row,
                     new PartitionKey(row.PartitionKey),
                     new ItemRequestOptions() { IfMatchEtag = ifMatchEtag }));
         }
 
-        private async Task<T> PerformCosmosOperationOrThrow<T>(Func<Task<ItemResponse<T>>> cosmosFunc)
+        private async Task<T> PerformCosmosOperationOrThrowAsync<T>(Func<Task<ItemResponse<T>>> cosmosFunc)
             where T : DbItem
         {
             try

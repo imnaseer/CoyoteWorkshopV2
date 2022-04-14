@@ -22,11 +22,12 @@ namespace PetImages.Contracts
 
         public DateTime LastModifiedTimestamp { get; set; }
 
-        public ImageItem ToImageItem(string blobName = null, string thumbnailBlobName = null)
+        public ImageItem ToImageItem(string accountName, string blobName = null, string thumbnailBlobName = null)
         {
             return new ImageItem()
             {
                 Id = Name,
+                AccountName = accountName,
                 ContentType = ContentType,
                 BlobName = blobName,
                 ThumbnailBlobName = thumbnailBlobName,

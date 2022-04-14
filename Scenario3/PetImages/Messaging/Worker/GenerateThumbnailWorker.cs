@@ -38,7 +38,7 @@ namespace PetImages.Worker
 
             var maybeImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
                 this.ImageContainer,
-                partitionKey: imageName,
+                partitionKey: accountName,
                 id: imageName);
 
             if (maybeImageItem == null || maybeImageItem.LastTouchedByRequestId != requestId)

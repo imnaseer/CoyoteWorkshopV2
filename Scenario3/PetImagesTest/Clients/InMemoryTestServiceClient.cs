@@ -45,7 +45,7 @@ namespace PetImagesTest.Clients
             return await Task.Run(async () =>
             {
                 var controller = new AccountController(this.AccountContainer);
-                var actionResult = await InvokeControllerAction(async () => await controller.CreateAccountAsync(accountCopy));
+                var actionResult = await InvokeControllerActionAsync(async () => await controller.CreateAccountAsync(accountCopy));
                 return ExtractServiceResponse<Account>(actionResult.Result);
             });
         }
@@ -57,7 +57,7 @@ namespace PetImagesTest.Clients
             return await Task.Run(async () =>
             {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerAction(async () => await controller.CreateImageFourthScenarioAsync(accountName, imageCopy));
+                var actionResult = await InvokeControllerActionAsync(async () => await controller.CreateImageFourthScenarioAsync(accountName, imageCopy));
                 return ExtractServiceResponse<Image>(actionResult.Result);
             });
         }
@@ -67,7 +67,7 @@ namespace PetImagesTest.Clients
             return await Task.Run(async () =>
             {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerAction(async () => await controller.GetImageAsync(accountName, imageName));
+                var actionResult = await InvokeControllerActionAsync(async () => await controller.GetImageAsync(accountName, imageName));
                 return ExtractServiceResponse<Image>(actionResult.Result);
             });
         }
@@ -77,7 +77,7 @@ namespace PetImagesTest.Clients
             return await Task.Run(async () =>
             {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerAction(async () => await controller.GetImageContentsAsync(accountName, imageName));
+                var actionResult = await InvokeControllerActionAsync(async () => await controller.GetImageContentsAsync(accountName, imageName));
                 return ExtractServiceResponse<byte[]>(actionResult.Result);
             });
         }
@@ -87,7 +87,7 @@ namespace PetImagesTest.Clients
             return await Task.Run(async () =>
             {
                 var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerAction(async () => await controller.GetImageThumbailAsync(accountName, imageName));
+                var actionResult = await InvokeControllerActionAsync(async () => await controller.GetImageThumbailAsync(accountName, imageName));
                 return ExtractServiceResponse<byte[]>(actionResult.Result);
             });
         }
@@ -96,7 +96,7 @@ namespace PetImagesTest.Clients
         /// Simulate middleware by wrapping invocation of controller in exception handling
         /// code which runs in middleware in production.
         /// </summary>
-        private static async Task<ActionResult<T>> InvokeControllerAction<T>(Func<Task<ActionResult<T>>> lambda)
+        private static async Task<ActionResult<T>> InvokeControllerActionAsync<T>(Func<Task<ActionResult<T>>> lambda)
         {
             return await lambda();
         }

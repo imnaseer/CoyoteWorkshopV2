@@ -48,7 +48,7 @@ namespace PetImages.Controllers
                 return this.BadRequest(maybeError);
             }
 
-            var imageItem = image.ToImageItem();
+            var imageItem = image.ToImageItem(accountName);
 
             var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
                 ImageContainer,
@@ -109,7 +109,7 @@ namespace PetImages.Controllers
             await StorageHelper.CreateContainerIfNotExistsAsync(this.StorageAccount, accountName);
             await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, image.Name, image.ContentType, image.Content);
 
-            var imageItem = image.ToImageItem();
+            var imageItem = image.ToImageItem(accountName);
             imageItem.BlobName = image.Name; // TODO: Remove this line in workshop code
             var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
                 ImageContainer,
@@ -164,6 +164,7 @@ namespace PetImages.Controllers
             }
 
             var imageItem = image.ToImageItem(
+                accountName,
                 blobName: Guid.NewGuid().ToString());
 
             // We upload the image to Azure Storage, before adding an entry to Cosmos DB
@@ -233,7 +234,7 @@ namespace PetImages.Controllers
                 RequestId = requestId
             });
 
-            var imageItem = image.ToImageItem(blobName: Guid.NewGuid().ToString());
+            var imageItem = image.ToImageItem(accountName, blobName: Guid.NewGuid().ToString());
             imageItem.State = ImageState.Creating.ToString();
             imageItem.LastTouchedByRequestId = requestId;
 
@@ -296,7 +297,7 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
+                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: accountName, id: imageName);
                 return this.Ok(imageItem.ToImage());
             }
             catch (DatabaseItemDoesNotExistException)
@@ -317,9 +318,9 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
+                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: accountName, id: imageName);
 
-                await this.ImageContainer.DeleteItem(partitionKey: imageName, id: imageName);
+                await this.ImageContainer.DeleteItem(partitionKey: accountName, id: imageName);
                 await StorageHelper.DeleteBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.BlobName);
 
                 return this.Ok();
@@ -345,7 +346,7 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
+                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: accountName, id: imageName);
                 var maybeBytes = await StorageHelper.GetBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.BlobName);
 
                 if (maybeBytes == null)
@@ -375,7 +376,7 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
+                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: accountName, id: imageName);
                 var maybeBytes = await StorageHelper.GetBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.ThumbnailBlobName);
 
                 if (maybeBytes == null)
