@@ -6,6 +6,8 @@
 		<EnableNETAnalyzers>false</EnableNETAnalyzers>
 		<AnalysisMode>all</AnalysisMode>
 		<AnalysisLevel>latest</AnalysisLevel>
+		<NugetPackagesPath Condition="'$(NUGET_PACKAGES)' == ''">../../packages</NugetPackagesPath>
+		<NugetPackagesPath Condition="'$(NUGET_PACKAGES)' != ''">$(NUGET_PACKAGES)</NugetPackagesPath>
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\PetImages\PetImages.csproj" />
@@ -24,10 +26,7 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
-	<Target Name="CoyoteRewriteWindows" AfterTargets="AfterBuild" Condition="'$(OS)'=='Windows_NT'">
-		<Exec Command="dotnet ../../packages/microsoft.coyote.test/1.5.3/lib/$(TargetFramework)/coyote.dll rewrite ../rewrite.coyote.json" />
-	</Target>
-	<Target Name="CoyoteRewriteNonWindows" AfterTargets="AfterBuild" Condition="'$(OS)'!='Windows_NT'">
-		<Exec Command="coyote rewrite ../rewrite.coyote.json" />
+	<Target Name="CoyoteRewriteWindows" AfterTargets="AfterBuild">
+		<Exec Command="dotnet $(NugetPackagesPath)/microsoft.coyote.test/1.5.3/lib/$(TargetFramework)/coyote.dll rewrite ../rewrite.coyote.json" />
 	</Target>
 </Project>
