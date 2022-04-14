@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using PetImages.Messaging;
+using PetImages.Middleware;
 using PetImages.Storage;
 
 namespace PetImages
@@ -70,6 +71,8 @@ namespace PetImages
 
             // Add Coyote Middleware that takes control of the controllers during testing.
             app.UseRequestController();
+
+            app.UseMiddleware<RequestIdMiddleware>();
 
             app.UseSwagger();
 

@@ -412,6 +412,9 @@ namespace PetImagesTest.Clients
 
         private static async Task<IServiceClient> InitializeSystemAsync(IAsyncPolicy asyncPolicy = null)
         {
+            Logger.WriteLine("Beginning test iteration");
+            Logger.WriteLine("");
+
             if (useInMemoryClient)
             {
                 var cosmosState = new MockCosmosState();
@@ -518,6 +521,9 @@ namespace PetImagesTest.Clients
             finally
             {
                 testingEngine.Stop();
+
+                Logger.WriteToFile("PetImages.log");
+                Logger.Clear();
             }
         }
 

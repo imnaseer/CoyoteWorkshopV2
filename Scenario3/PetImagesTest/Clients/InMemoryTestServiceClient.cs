@@ -1,10 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
 using PetImages.Controllers;
 using PetImages.Messaging;
+using PetImages.Middleware;
 using PetImages.Storage;
 using System;
 using System.Net;
@@ -14,10 +16,10 @@ namespace PetImagesTest.Clients
 {
     public class InMemoryTestServiceClient : IServiceClient
     {
-        private readonly IAccountContainer AccountContainer;
-        private readonly IImageContainer ImageContainer;
-        private readonly IStorageAccount BlobContainer;
-        private readonly IMessagingClient MessagingClient;
+        private readonly IAccountContainer accountContainer;
+        private readonly IImageContainer imageContainer;
+        private readonly IStorageAccount blobContainer;
+        private readonly IMessagingClient messagingClient;
 
         public InMemoryTestServiceClient(IAccountContainer accountContainer)
             : this(accountContainer, null, null, null)
@@ -31,10 +33,10 @@ namespace PetImagesTest.Clients
 
         public InMemoryTestServiceClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer, IMessagingClient messagingClient)
         {
-            this.AccountContainer = accountContainer;
-            this.ImageContainer = imageContainer;
-            this.BlobContainer = blobContainer;
-            this.MessagingClient = messagingClient;
+            this.accountContainer = accountContainer;
+            this.imageContainer = imageContainer;
+            this.blobContainer = blobContainer;
+            this.messagingClient = messagingClient;
         }
 
         public async Task<ServiceResponse<Account>> CreateAccountAsync(Account account)
@@ -44,8 +46,11 @@ namespace PetImagesTest.Clients
 
             return await Task.Run(async () =>
             {
-                var controller = new AccountController(this.AccountContainer);
-                var actionResult = await InvokeControllerActionAsync(async () => await controller.CreateAccountAsync(accountCopy));
+                var controller = new AccountController(this.accountContainer);
+                var actionResult = await InvokeControllerActionAsync(
+                    HttpMethods.Post,
+                    new Uri($"/accounts", UriKind.RelativeOrAbsolute),
+                    async () => await controller.CreateAccountAsync(accountCopy));
                 return ExtractServiceResponse<Account>(actionResult.Result);
             });
         }
@@ -56,8 +61,11 @@ namespace PetImagesTest.Clients
 
             return await Task.Run(async () =>
             {
-                var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerActionAsync(async () => await controller.CreateImageFourthScenarioAsync(accountName, imageCopy));
+                var controller = new ImageController(this.accountContainer, this.imageContainer, this.blobContainer, this.messagingClient);
+                var actionResult = await InvokeControllerActionAsync(
+                    HttpMethods.Put,
+                    new Uri($"/accounts/{accountName}/images", UriKind.RelativeOrAbsolute),
+                    async () => await controller.CreateImageFourthScenarioAsync(accountName, imageCopy));
                 return ExtractServiceResponse<Image>(actionResult.Result);
             });
         }
@@ -66,8 +74,11 @@ namespace PetImagesTest.Clients
         {
             return await Task.Run(async () =>
             {
-                var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerActionAsync(async () => await controller.GetImageAsync(accountName, imageName));
+                var controller = new ImageController(this.accountContainer, this.imageContainer, this.blobContainer, this.messagingClient);
+                var actionResult = await InvokeControllerActionAsync(
+                    HttpMethods.Get,
+                    new Uri($"/accounts/{accountName}/images/{imageName}", UriKind.RelativeOrAbsolute),
+                    async () => await controller.GetImageAsync(accountName, imageName));
                 return ExtractServiceResponse<Image>(actionResult.Result);
             });
         }
@@ -76,8 +87,11 @@ namespace PetImagesTest.Clients
         {
             return await Task.Run(async () =>
             {
-                var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerActionAsync(async () => await controller.GetImageContentsAsync(accountName, imageName));
+                var controller = new ImageController(this.accountContainer, this.imageContainer, this.blobContainer, this.messagingClient);
+                var actionResult = await InvokeControllerActionAsync(
+                    HttpMethods.Get,
+                    new Uri($"/accounts/{accountName}/images/{imageName}/content", UriKind.RelativeOrAbsolute),
+                    async () => await controller.GetImageContentsAsync(accountName, imageName));
                 return ExtractServiceResponse<byte[]>(actionResult.Result);
             });
         }
@@ -86,8 +100,11 @@ namespace PetImagesTest.Clients
         {
             return await Task.Run(async () =>
             {
-                var controller = new ImageController(this.AccountContainer, this.ImageContainer, this.BlobContainer, this.MessagingClient);
-                var actionResult = await InvokeControllerActionAsync(async () => await controller.GetImageThumbailAsync(accountName, imageName));
+                var controller = new ImageController(this.accountContainer, this.imageContainer, this.blobContainer, this.messagingClient);
+                var actionResult = await InvokeControllerActionAsync(
+                    HttpMethods.Get,
+                    new Uri($"/accounts/{accountName}/images/{imageName}/thumbnail", UriKind.RelativeOrAbsolute),
+                    async () => await controller.GetImageThumbailAsync(accountName, imageName));
                 return ExtractServiceResponse<byte[]>(actionResult.Result);
             });
         }
@@ -96,9 +113,21 @@ namespace PetImagesTest.Clients
         /// Simulate middleware by wrapping invocation of controller in exception handling
         /// code which runs in middleware in production.
         /// </summary>
-        private static async Task<ActionResult<T>> InvokeControllerActionAsync<T>(Func<Task<ActionResult<T>>> lambda)
+        private static async Task<ActionResult<T>> InvokeControllerActionAsync<T>(
+            string httpMethod,
+            Uri path,
+            Func<Task<ActionResult<T>>> lambda)
         {
-            return await lambda();
+            ActionResult<T> result = null;
+            var middlewareChain = new RequestIdMiddleware(async (httpContext) => result = await lambda());
+
+            var httpContext = new DefaultHttpContext();
+            httpContext.Request.Method = httpMethod.ToString();
+            httpContext.Request.Path = path.ToString();
+
+            await middlewareChain.InvokeAsync(httpContext);
+
+            return result;
         }
 
         private static ServiceResponse<T> ExtractServiceResponse<T>(ActionResult<T> actionResult)
