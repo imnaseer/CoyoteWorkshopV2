@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
@@ -83,7 +85,7 @@ namespace PetImages.Controllers
         [HttpPost]
         [Route(Routes.Accounts)]
         [NonAction]
-        public async Task<ActionResult<Account>> CreateAccountAsyncIncorrect(Account account)
+        public async Task<ActionResult<Account>> CreateAccountAsyncIncorrectAsync(Account account)
         {
             var maybeError = ValidateAccount(account);
             if (maybeError != null)
@@ -114,6 +116,11 @@ namespace PetImages.Controllers
             }
 
             if (string.IsNullOrWhiteSpace(account.Name))
+            {
+                return ErrorFactory.InvalidParameterValueError(nameof(Account.Name), account.Name);
+            }
+
+            if (string.IsNullOrWhiteSpace(account.ContactEmailAddress))
             {
                 return ErrorFactory.InvalidParameterValueError(nameof(Account.Name), account.Name);
             }

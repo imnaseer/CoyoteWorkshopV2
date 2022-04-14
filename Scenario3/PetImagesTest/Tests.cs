@@ -27,23 +27,31 @@ namespace PetImagesTest.Clients
     [TestClass]
     public class Tests
     {
-        private static bool useInMemoryClient = false;
+        private static readonly bool useInMemoryClient = true;
 
         [TestMethod]
-        public async Task TestFirstScenario()
+        public async Task TestFirstScenarioAsync()
         {
             var serviceClient = await InitializeSystemAsync();
 
-            // Create an account request payload
-            var account = new Account()
+            var accountName = "MyAccount";
+
+            var account1 = new Account()
             {
-                Name = "MyAccount"
+                Name = accountName,
+                ContactEmailAddress = "john@acme.com"
+            };
+
+            var account2 = new Account()
+            {
+                Name = accountName,
+                ContactEmailAddress = "sally@contoso.com"
             };
 
             // Call CreateAccount twice without awaiting, which makes both methods run
             // asynchronously with each other.
-            var task1 = serviceClient.CreateAccountAsync(account);
-            var task2 = serviceClient.CreateAccountAsync(account);
+            var task1 = serviceClient.CreateAccountAsync(account1);
+            var task2 = serviceClient.CreateAccountAsync(account2);
 
             // Then wait both requests to complete.
             await Task.WhenAll(task1, task2);
@@ -60,7 +68,7 @@ namespace PetImagesTest.Clients
         }
 
         [TestMethod]
-        public async Task TestSecondScenarioUpdate()
+        public async Task TestSecondScenarioUpdateAsync()
         {
             var serviceClient = await InitializeSystemAsync();
 
@@ -71,7 +79,8 @@ namespace PetImagesTest.Clients
             // Create an account request payload
             var account = new Account()
             {
-                Name = accountName
+                Name = accountName,
+                ContactEmailAddress = "john@acme.com"
             };
 
             var accountResult = await serviceClient.CreateAccountAsync(account);
@@ -122,7 +131,7 @@ namespace PetImagesTest.Clients
         }
 
         [TestMethod]
-        public async Task TestSecondScenarioCreate()
+        public async Task TestSecondScenarioCreateAsync()
         {
             var serviceClient = await InitializeSystemAsync();
 
@@ -133,7 +142,8 @@ namespace PetImagesTest.Clients
             // Create an account request payload
             var account = new Account()
             {
-                Name = accountName
+                Name = accountName,
+                ContactEmailAddress = "john@acme.com"
             };
 
             var accountResult = await serviceClient.CreateAccountAsync(account);
@@ -173,7 +183,7 @@ namespace PetImagesTest.Clients
         }
 
         [TestMethod]
-        public async Task TestThirdScenario()
+        public async Task TestThirdScenarioAsync()
         {
             var serviceClient = await InitializeSystemAsync();
 
@@ -184,7 +194,8 @@ namespace PetImagesTest.Clients
             // Create an account request payload
             var account = new Account()
             {
-                Name = accountName
+                Name = accountName,
+                ContactEmailAddress = "john@acme.com"
             };
 
             var accountResult = await serviceClient.CreateAccountAsync(account);
@@ -227,7 +238,7 @@ namespace PetImagesTest.Clients
         }
 
         [TestMethod]
-        public async Task TestFourthScenario()
+        public async Task TestFourthScenarioAsync()
         {
             var serviceClient = await InitializeSystemAsync();
 
@@ -238,7 +249,8 @@ namespace PetImagesTest.Clients
             // Create an account request payload
             var account = new Account()
             {
-                Name = accountName
+                Name = accountName,
+                ContactEmailAddress = "john@acme.com"
             };
 
             var accountResult = await serviceClient.CreateAccountAsync(account);
@@ -302,7 +314,7 @@ namespace PetImagesTest.Clients
         }
 
         [TestMethod]
-        public async Task TestFifthScenario()
+        public async Task TestFifthScenarioAsync()
         {
             var randomizedFaultPolicy = TestRetryPolicyFactory.GetRandomPermanentFailureAsyncPolicy();
             var serviceClient = await InitializeSystemAsync(randomizedFaultPolicy);
@@ -315,7 +327,8 @@ namespace PetImagesTest.Clients
             // Create an account request payload
             var account = new Account()
             {
-                Name = accountName
+                Name = accountName,
+                ContactEmailAddress = "john@acme.com"
             };
 
             var accountResult = await serviceClient.CreateAccountAsync(account);
@@ -364,37 +377,37 @@ namespace PetImagesTest.Clients
         [TestMethod]
         public void SystematicTestFirstScenario()
         {
-            RunSystematicTest(TestFirstScenario);
+            RunSystematicTest(TestFirstScenarioAsync);
         }
 
         [TestMethod]
         public void SystematicTestSecondScenarioUpdate()
         {
-            RunSystematicTest(TestSecondScenarioUpdate);
+            RunSystematicTest(TestSecondScenarioUpdateAsync);
         }
 
         [TestMethod]
         public void SystematicTestSecondScenarioCreate()
         {
-            RunSystematicTest(TestSecondScenarioCreate);
+            RunSystematicTest(TestSecondScenarioCreateAsync);
         }
 
         [TestMethod]
         public void SystematicTestThirdScenario()
         {
-            RunSystematicTest(TestThirdScenario);
+            RunSystematicTest(TestThirdScenarioAsync);
         }
 
         [TestMethod]
         public void SystematicTestFourthScenario()
         {
-            RunSystematicTest(TestFourthScenario);
+            RunSystematicTest(TestFourthScenarioAsync);
         }
 
         [TestMethod]
         public void SystematicTestFifthScenario()
         {
-            RunSystematicTest(TestFifthScenario);
+            RunSystematicTest(TestFifthScenarioAsync);
         }
 
         private static async Task<IServiceClient> InitializeSystemAsync(IAsyncPolicy asyncPolicy = null)

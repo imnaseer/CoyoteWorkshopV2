@@ -230,3 +230,5 @@ dotnet_diagnostic.CA5398.severity = warning
 
 # CA5401: Do not use CreateEncryptor with non-default IV
 dotnet_diagnostic.CA5401.severity = warning
+
+dotnet_diagnostic.IDE0078.severity = none
