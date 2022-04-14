@@ -1,4 +1,7 @@
-﻿namespace PetImages.Contracts
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+namespace PetImages.Contracts
 {
     public class Error
     {

@@ -50,7 +50,7 @@ namespace PetImages.Controllers
 
             var imageItem = image.ToImageItem();
 
-            var maybeExistingImageItem = await CosmosHelper.GetItemIfExists<ImageItem>(
+            var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
                 ImageContainer,
                 imageItem.PartitionKey,
                 imageItem.Id);
@@ -106,12 +106,12 @@ namespace PetImages.Controllers
             // so that it is guaranteed to be there when user does a GET request.
             // Note: we're calling CreateOrUpdateBlobAsync because Azure Storage doesn't
             // have a create-only API.
-            await StorageHelper.CreateContainerIfNotExists(this.StorageAccount, accountName);
+            await StorageHelper.CreateContainerIfNotExistsAsync(this.StorageAccount, accountName);
             await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, image.Name, image.ContentType, image.Content);
 
             var imageItem = image.ToImageItem();
             imageItem.BlobName = image.Name; // TODO: Remove this line in workshop code
-            var maybeExistingImageItem = await CosmosHelper.GetItemIfExists<ImageItem>(
+            var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
                 ImageContainer,
                 imageItem.PartitionKey,
                 imageItem.Id);
@@ -170,10 +170,10 @@ namespace PetImages.Controllers
             // so that it is guaranteed to be there when user does a GET request.
             // Note: we're calling CreateOrUpdateBlobAsync because Azure Storage doesn't
             // have a create-only API.
-            await StorageHelper.CreateContainerIfNotExists(this.StorageAccount, accountName);
+            await StorageHelper.CreateContainerIfNotExistsAsync(this.StorageAccount, accountName);
             await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageItem.BlobName, image.ContentType, image.Content);
 
-            var maybeExistingImageItem = await CosmosHelper.GetItemIfExists<ImageItem>(
+            var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
                 ImageContainer,
                 imageItem.PartitionKey,
                 imageItem.Id);
@@ -241,10 +241,10 @@ namespace PetImages.Controllers
             // so that it is guaranteed to be there when user does a GET request.
             // Note: we're calling CreateOrUpdateBlobAsync because Azure Storage doesn't
             // have a create-only API.
-            await StorageHelper.CreateContainerIfNotExists(this.StorageAccount, accountName);
+            await StorageHelper.CreateContainerIfNotExistsAsync(this.StorageAccount, accountName);
             await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageItem.BlobName, image.ContentType, image.Content);
 
-            var maybeExistingImageItem = await CosmosHelper.GetItemIfExists<ImageItem>(
+            var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
                 ImageContainer,
                 imageItem.PartitionKey,
                 imageItem.Id);
@@ -320,7 +320,7 @@ namespace PetImages.Controllers
                 var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
 
                 await this.ImageContainer.DeleteItem(partitionKey: imageName, id: imageName);
-                await StorageHelper.DeleteBlobIfExists(this.StorageAccount, accountName, imageItem.BlobName);
+                await StorageHelper.DeleteBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.BlobName);
 
                 return this.Ok();
             }
@@ -346,7 +346,7 @@ namespace PetImages.Controllers
             try
             {
                 var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
-                var maybeBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, imageItem.BlobName);
+                var maybeBytes = await StorageHelper.GetBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.BlobName);
 
                 if (maybeBytes == null)
                 {
@@ -376,7 +376,7 @@ namespace PetImages.Controllers
             try
             {
                 var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
-                var maybeBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, imageItem.ThumbnailBlobName);
+                var maybeBytes = await StorageHelper.GetBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.ThumbnailBlobName);
 
                 if (maybeBytes == null)
                 {
@@ -424,7 +424,7 @@ namespace PetImages.Controllers
 
         private async Task<Error> ValidateAccountAsync(string accountName)
         {
-            if (!await CosmosHelper.DoesItemExist<AccountItem>(AccountContainer, partitionKey: accountName, id: accountName))
+            if (!await CosmosHelper.DoesItemExistAsync<AccountItem>(AccountContainer, partitionKey: accountName, id: accountName))
             {
                 return ErrorFactory.AccountDoesNotExistError(accountName);
             }

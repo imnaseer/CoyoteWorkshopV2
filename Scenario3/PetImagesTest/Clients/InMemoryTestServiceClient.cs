@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
-using System.Net;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
 using PetImages.Controllers;
-using PetImages.Storage;
 using PetImages.Messaging;
+using PetImages.Storage;
+using System;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace PetImagesTest.Clients
 {

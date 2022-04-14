@@ -1,8 +1,11 @@
-﻿namespace PetImages
-{
-    using System;
-    using PetImages.Contracts;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
+using PetImages.Contracts;
+using System;
+
+namespace PetImages
+{
     public class ErrorFactory
     {
         public static readonly string ParsingErrorCode = "ParsingError";

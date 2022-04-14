@@ -1,12 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PetImages.Entities;
-using System.Threading.Tasks;
-using System.Net;
 using Microsoft.Azure.Cosmos;
+using PetImages.Entities;
 using PetImages.Exceptions;
 using System;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace PetImages.Storage
 {
@@ -34,7 +34,7 @@ namespace PetImages.Storage
                 new PartitionKey(partitionKey),
                 new ItemRequestOptions() { IfMatchEtag = ifMatchEtag });
             }
-            catch(CosmosException ex)
+            catch (CosmosException ex)
             {
                 throw CosmosToDatabaseExceptionProvider(ex)();
             }
@@ -42,7 +42,7 @@ namespace PetImages.Storage
 
         public async Task<T> GetItem<T>(string partitionKey, string id) where T : DbItem
         {
-            return await this.PerformCosmosOperationOrThrow(() => 
+            return await this.PerformCosmosOperationOrThrow(() =>
                 this.cosmosContainer.ReadItemAsync<T>(
                     id, new PartitionKey(partitionKey)));
         }
@@ -67,7 +67,7 @@ namespace PetImages.Storage
         }
 
         private async Task<T> PerformCosmosOperationOrThrow<T>(Func<Task<ItemResponse<T>>> cosmosFunc)
-            where T: DbItem
+            where T : DbItem
         {
             try
             {

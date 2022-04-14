@@ -1,14 +1,17 @@
-﻿namespace PetImages.TestRetryFramework
-{
-    using Polly;
-    using PetImages.RetryFramework;
-    using PetImagesTest.Exceptions;
-    using Microsoft.Coyote.Random;
-    using System;
-    using System.Net.Sockets;
-    using System.Threading;
-    using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
+using Microsoft.Coyote.Random;
+using PetImages.RetryFramework;
+using PetImagesTest.Exceptions;
+using Polly;
+using System;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace PetImages.TestRetryFramework
+{
     public class TestRetryPolicyFactory
     {
         public static IAsyncPolicy GetOneTimeFailRetryAsncPolicy(Func<Exception, bool> isRetryableException = null)
@@ -52,7 +55,7 @@
     {
         private const string KeyName = "throw-exception-intentionally";
 
-        private Generator randomGenerator = Generator.Create();
+        private readonly Generator randomGenerator = Generator.Create();
 
         public bool ShouldRandomlyFail { get; set; } = true;
 

@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Threading.Tasks;
 using PetImages.Entities;
+using System.Threading.Tasks;
 
 namespace PetImages.Storage
 {

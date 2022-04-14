@@ -1,4 +1,7 @@
-﻿using Azure.Storage.Queues;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Azure.Storage.Queues;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 
@@ -17,8 +20,8 @@ namespace PetImages.Messaging
         public async Task<Message> ReadMessage()
         {
             var messageResponse = await this.queueClient.ReceiveMessageAsync();
-            
-            if(messageResponse.Value == null)
+
+            if (messageResponse.Value == null)
             {
                 return null;
             }

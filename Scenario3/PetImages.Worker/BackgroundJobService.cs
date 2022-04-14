@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PetImages.Messaging;
@@ -36,15 +39,15 @@ namespace PetImages.Worker
                 var nextMessage = await this.MessageReceiver.ReadMessage();
                 if (nextMessage != null)
                 {
-                    if(nextMessage.Type.Equals(Message.GenerateThumbnailMessageType, StringComparison.InvariantCultureIgnoreCase))
+                    if (nextMessage.Type.Equals(Message.GenerateThumbnailMessageType, StringComparison.InvariantCultureIgnoreCase))
                     {
                         try
                         {
                             var thumbnailImageMessage = (GenerateThumbnailMessage)nextMessage;
                             _logger.LogInformation($"Processing Generate Thumbnail Message for {thumbnailImageMessage.AccountName} account's {thumbnailImageMessage.ImageName} image.");
                             var workerResult = await this.GenerateThumbnailWorker.ProcessMessage(thumbnailImageMessage);
-                            
-                            switch(workerResult.ResultCode)
+
+                            switch (workerResult.ResultCode)
                             {
                                 case WorkerResultCode.Retry:
                                     // Requeue the message for retry

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PetImages.Messaging;
@@ -22,7 +25,7 @@ namespace PetImages.Worker
                     var storageAccount = new AzureStorageAccount();
 
                     services.AddSingleton(accountContainer);
-                    services.AddSingleton((IImageContainer) imageContainer);
+                    services.AddSingleton((IImageContainer)imageContainer);
                     services.AddSingleton<IStorageAccount>(storageAccount);
                     services.AddSingleton<IMessageReceiver>(_ => new StorageMessageReceiverClient(Constants.ThumbnailQueueName));
                     services.AddSingleton<IMessagingClient>(_ => new StorageMessagingClient(Constants.ThumbnailQueueName));

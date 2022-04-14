@@ -1,11 +1,14 @@
-﻿namespace PetImages.Storage
-{
-    using System.Threading.Tasks;
-    using PetImages.Exceptions;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
+using PetImages.Exceptions;
+using System.Threading.Tasks;
+
+namespace PetImages.Storage
+{
     public static class StorageHelper
     {
-        public static async Task CreateContainerIfNotExists(IStorageAccount storageAccount, string containerName)
+        public static async Task CreateContainerIfNotExistsAsync(IStorageAccount storageAccount, string containerName)
         {
             try
             {
@@ -16,7 +19,7 @@
             }
         }
 
-        public static async Task DeleteContainerIfExists(IStorageAccount storageAccount, string containerName)
+        public static async Task DeleteContainerIfExistsAsync(IStorageAccount storageAccount, string containerName)
         {
             try
             {
@@ -26,8 +29,8 @@
             {
             }
         }
-        
-        public static async Task<byte[]> GetBlobIfExists(IStorageAccount storageAccount, string containerName, string blobName)
+
+        public static async Task<byte[]> GetBlobIfExistsAsync(IStorageAccount storageAccount, string containerName, string blobName)
         {
             try
             {
@@ -43,7 +46,7 @@
             }
         }
 
-        public static async Task DeleteBlobIfExists(IStorageAccount storageAccount, string containerName, string blobName)
+        public static async Task DeleteBlobIfExistsAsync(IStorageAccount storageAccount, string containerName, string blobName)
         {
             try
             {

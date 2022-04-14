@@ -1,8 +1,11 @@
-﻿namespace PetImages.Storage
-{
-    using Polly;
-    using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
 
+using Polly;
+using System.Threading.Tasks;
+
+namespace PetImages.Storage
+{
     public class WrappedCosmosDatabase : ICosmosDatabase
     {
         private readonly IAsyncPolicy AsyncPolicy;

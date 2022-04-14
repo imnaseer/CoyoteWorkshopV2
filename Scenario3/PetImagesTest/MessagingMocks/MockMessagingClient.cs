@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
-using System.Threading.Tasks;
 using Microsoft.Coyote.Specifications;
 using PetImages.Messaging;
 using PetImages.Messaging.Worker;
 using PetImages.Storage;
 using PetImages.Worker;
 using PetImagesTest.Exceptions;
+using System;
+using System.Threading.Tasks;
 
 namespace PetImagesTest.MessagingMocks
 {
@@ -34,7 +34,7 @@ namespace PetImagesTest.MessagingMocks
                     if (message.Type == Message.GenerateThumbnailMessageType)
                     {
                         var clonedMessage = TestHelper.Clone((GenerateThumbnailMessage)message);
-                        var workerResult = await this.RunThumbnailWorkerWithRetry(clonedMessage);
+                        var workerResult = await this.RunThumbnailWorkerWithRetryAsync(clonedMessage);
                     }
                     else
                     {
@@ -50,7 +50,7 @@ namespace PetImagesTest.MessagingMocks
             return Task.CompletedTask;
         }
 
-        private async Task<WorkerResult> RunThumbnailWorkerWithRetry(GenerateThumbnailMessage message)
+        private async Task<WorkerResult> RunThumbnailWorkerWithRetryAsync(GenerateThumbnailMessage message)
         {
             WorkerResult workerResult = null;
             do

@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Threading.Tasks;
 using PetImages.Messaging;
 using PetImages.Messaging.Worker;
+using System.Threading.Tasks;
 
 namespace PetImages.Worker
 {

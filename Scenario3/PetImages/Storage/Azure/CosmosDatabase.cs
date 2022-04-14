@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Threading.Tasks;
 using Microsoft.Azure.Cosmos;
+using System.Threading.Tasks;
 
 namespace PetImages.Storage
 {
@@ -48,14 +48,14 @@ namespace PetImages.Storage
         public Task<ICosmosContainer> GetContainerAsync(string containerName)
         {
             var cosmosContainer = this.cosmosDatabase.GetContainer(containerName);
-            
+
             // Since getting container is not async
-            return Task.FromResult((ICosmosContainer) new CosmosContainer(cosmosContainer));
+            return Task.FromResult((ICosmosContainer)new CosmosContainer(cosmosContainer));
         }
 
         private void Initialize()
         {
-            var response = this.cosmosClient.CreateDatabaseIfNotExistsAsync(this.databaseName).Result;
+            _ = this.cosmosClient.CreateDatabaseIfNotExistsAsync(this.databaseName).Result;
             this.cosmosDatabase = this.cosmosClient.GetDatabase(this.databaseName);
         }
     }

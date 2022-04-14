@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +10,8 @@ using PetImages.RetryFramework;
 using PetImages.Storage;
 using PetImagesTest.MessagingMocks;
 using PetImagesTest.StorageMocks;
+using System.IO;
+using System.Threading.Tasks;
 
 namespace PetImagesTest
 {

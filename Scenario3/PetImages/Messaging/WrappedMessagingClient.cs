@@ -1,4 +1,7 @@
-﻿namespace PetImages.Messaging
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+namespace PetImages.Messaging
 {
     using Polly;
     using System.Threading.Tasks;

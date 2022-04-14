@@ -1,14 +1,12 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
 using PetImages.Entities;
 using PetImages.Exceptions;
 using PetImages.Storage;
+using System.Threading.Tasks;
 
 namespace PetImages.Controllers
 {
@@ -95,7 +93,7 @@ namespace PetImages.Controllers
 
             var accountItem = account.ToItem();
 
-            if (await CosmosHelper.DoesItemExist<AccountItem>(
+            if (await CosmosHelper.DoesItemExistAsync<AccountItem>(
                 this.AccountContainer,
                 accountItem.PartitionKey,
                 accountItem.Id))

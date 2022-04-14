@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 
 using PetImages.Entities;
-using System.Threading.Tasks;
 using Polly;
+using System.Threading.Tasks;
 
 namespace PetImages.Storage
 {

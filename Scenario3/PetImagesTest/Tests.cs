@@ -2,25 +2,25 @@
 // Licensed under the MIT License.
 
 using Microsoft.Coyote;
+using Microsoft.Coyote.Specifications;
 using Microsoft.Coyote.SystematicTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PetImages;
 using PetImages.Contracts;
-using PetImages.Storage;
+using PetImages.Messaging;
 using PetImages.RetryFramework;
-using PetImagesTest.Exceptions;
+using PetImages.Storage;
 using PetImages.TestRetryFramework;
-using PetImagesTest.StorageMocks;
+using PetImagesTest.Exceptions;
 using PetImagesTest.MessagingMocks;
+using PetImagesTest.StorageMocks;
+using Polly;
 using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using Microsoft.Coyote.Specifications;
-using PetImages.Messaging;
-using Polly;
 
 namespace PetImagesTest.Clients
 {

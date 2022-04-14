@@ -1,15 +1,15 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System.Threading.Tasks;
 using PetImages.Entities;
 using PetImages.Exceptions;
+using System.Threading.Tasks;
 
 namespace PetImages.Storage
 {
     public static class CosmosHelper
     {
-        public static async Task<bool> DoesItemExist<T>(ICosmosContainer container, string partitionKey, string id)
+        public static async Task<bool> DoesItemExistAsync<T>(ICosmosContainer container, string partitionKey, string id)
             where T : DbItem
         {
             try
@@ -23,7 +23,7 @@ namespace PetImages.Storage
             }
         }
 
-        public static async Task<T> GetItemIfExists<T>(ICosmosContainer container, string partitionKey, string id)
+        public static async Task<T> GetItemIfExistsAsync<T>(ICosmosContainer container, string partitionKey, string id)
             where T : DbItem
         {
             try

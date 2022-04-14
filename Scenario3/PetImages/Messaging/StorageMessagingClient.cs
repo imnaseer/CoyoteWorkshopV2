@@ -1,4 +1,7 @@
-﻿using Azure.Storage.Queues;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Azure.Storage.Queues;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 

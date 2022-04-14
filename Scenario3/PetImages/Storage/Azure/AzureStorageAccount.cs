@@ -1,4 +1,7 @@
-﻿using Azure.Storage.Blobs;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Azure.Storage.Blobs;
 using PetImages.Exceptions;
 using System.IO;
 using System.Threading.Tasks;
@@ -8,7 +11,7 @@ namespace PetImages.Storage
     public class AzureStorageAccount : IStorageAccount
     {
         private readonly BlobServiceClient blobServiceClient;
-        
+
         public AzureStorageAccount()
         {
             // Ref: https://docs.microsoft.com/en-us/azure/storage/common/storage-use-emulator
@@ -82,12 +85,12 @@ namespace PetImages.Storage
 
             var blobClient = containerClient.GetBlobClient(blobName);
             var blobExists = await blobClient.ExistsAsync();
-            if(!blobExists)
+            if (!blobExists)
             {
                 throw new BlobDoesNotExistException();
             }
 
-            using(var blobStream = await blobClient.OpenReadAsync())
+            using (var blobStream = await blobClient.OpenReadAsync())
             {
                 var memoryStream = new MemoryStream();
                 blobStream.CopyTo(memoryStream);

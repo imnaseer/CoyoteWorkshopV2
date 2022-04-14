@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using System;
-using System.Threading.Tasks;
 using PetImages.Contracts;
 using PetImages.Entities;
 using PetImages.Exceptions;
 using PetImages.Messaging;
 using PetImages.Messaging.Worker;
 using PetImages.Storage;
+using System;
+using System.Threading.Tasks;
 
 namespace PetImages.Worker
 {
@@ -36,7 +36,7 @@ namespace PetImages.Worker
             var imageName = thumbnailMessage.ImageName;
             var requestId = thumbnailMessage.RequestId;
 
-            var maybeImageItem = await CosmosHelper.GetItemIfExists<ImageItem>(
+            var maybeImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
                 this.ImageContainer,
                 partitionKey: imageName,
                 id: imageName);
@@ -50,7 +50,7 @@ namespace PetImages.Worker
                 };
             }
 
-            var maybeImageBytes = await StorageHelper.GetBlobIfExists(this.StorageAccount, accountName, maybeImageItem.BlobName);
+            var maybeImageBytes = await StorageHelper.GetBlobIfExistsAsync(this.StorageAccount, accountName, maybeImageItem.BlobName);
             if (maybeImageBytes == null)
             {
                 return new WorkerResult

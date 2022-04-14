@@ -1,7 +1,10 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Polly;
+using System;
 using System.Net;
 using System.Net.Sockets;
-using Polly;
 
 namespace PetImages.RetryFramework
 {
@@ -9,7 +12,7 @@ namespace PetImages.RetryFramework
     {
         public static IAsyncPolicy GetAsyncRetryExponential(int numOfAttempts = 3, Func<Exception, bool> isRetryableException = null)
         {
-            Func<Exception, bool> shouldRetry = isRetryableException ?? DefaultRetryableNetworkExceptions;
+            var shouldRetry = isRetryableException ?? DefaultRetryableNetworkExceptions;
 
             AsyncPolicy asyncPolicy = Policy
                 .Handle<Exception>(ex => shouldRetry(ex))

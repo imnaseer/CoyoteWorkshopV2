@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc.Testing;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT License.
+
+using Microsoft.AspNetCore.Mvc.Testing;
 using PetImages.Contracts;
 using PetImagesTest.Exceptions;
 using System;
@@ -13,7 +16,7 @@ namespace PetImagesTest.Clients
     {
         private readonly HttpClient Client;
 
-        private static JsonSerializerOptions serializerOptions = new JsonSerializerOptions()
+        private static readonly JsonSerializerOptions serializerOptions = new JsonSerializerOptions()
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
@@ -33,7 +36,7 @@ namespace PetImagesTest.Clients
                 new Uri($"accounts", UriKind.RelativeOrAbsolute),
                 JsonContent.Create(account));
 
-            return await ConstructServiceResponse<Account>(response);
+            return await ConstructServiceResponseAsync<Account>(response);
         }
 
         public async Task<ServiceResponse<Image>> CreateOrUpdateImageAsync(string accountName, Image image)
@@ -42,7 +45,7 @@ namespace PetImagesTest.Clients
                 new Uri($"accounts/{accountName}/images", UriKind.RelativeOrAbsolute),
                 JsonContent.Create(image));
 
-            return await ConstructServiceResponse<Image>(response);
+            return await ConstructServiceResponseAsync<Image>(response);
         }
 
         public async Task<ServiceResponse<Image>> GetImageAsync(string accountName, string imageName)
@@ -50,7 +53,7 @@ namespace PetImagesTest.Clients
             var response = await this.Client.GetAsync(
                 new Uri($"accounts/{accountName}/images/{imageName}", UriKind.RelativeOrAbsolute));
 
-            return await ConstructServiceResponse<Image>(response);
+            return await ConstructServiceResponseAsync<Image>(response);
         }
 
         public async Task<ServiceResponse<byte[]>> GetImageContentAsync(string accountName, string imageName)
@@ -58,7 +61,7 @@ namespace PetImagesTest.Clients
             var response = await this.Client.GetAsync(
                 new Uri($"accounts/{accountName}/images/{imageName}/content", UriKind.RelativeOrAbsolute));
 
-            return await ConstructServiceResponse<byte[]>(response);
+            return await ConstructServiceResponseAsync<byte[]>(response);
         }
 
         public async Task<ServiceResponse<byte[]>> GetImageThumbnailAsync(string accountName, string imageName)
@@ -66,7 +69,7 @@ namespace PetImagesTest.Clients
             var response = await this.Client.GetAsync(
                 new Uri($"accounts/{accountName}/images/{imageName}/thumbnail", UriKind.RelativeOrAbsolute));
 
-            return await ConstructServiceResponse<byte[]>(response);
+            return await ConstructServiceResponseAsync<byte[]>(response);
         }
 
         public void Dispose()
@@ -74,11 +77,11 @@ namespace PetImagesTest.Clients
             this.Client.Dispose();
         }
 
-        private static async Task<ServiceResponse<T>> ConstructServiceResponse<T>(HttpResponseMessage httpResponse)
+        private static async Task<ServiceResponse<T>> ConstructServiceResponseAsync<T>(HttpResponseMessage httpResponse)
             where T : class
         {
             var statusCode = (int)httpResponse.StatusCode;
-            
+
             if (statusCode >= 200 && statusCode <= 299)
             {
                 return new ServiceResponse<T>()
