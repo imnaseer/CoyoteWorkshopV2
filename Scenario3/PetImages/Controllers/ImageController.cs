@@ -354,7 +354,7 @@ namespace PetImages.Controllers
                     return this.NotFound();
                 }
 
-                return this.Ok(maybeBytes);
+                return this.File(maybeBytes, imageItem.ContentType);
             }
             catch (DatabaseItemDoesNotExistException)
             {
@@ -384,7 +384,7 @@ namespace PetImages.Controllers
                     return this.NotFound();
                 }
 
-                return this.Ok(maybeBytes);
+                return this.File(maybeBytes, imageItem.ContentType);
             }
             catch (DatabaseItemDoesNotExistException)
             {

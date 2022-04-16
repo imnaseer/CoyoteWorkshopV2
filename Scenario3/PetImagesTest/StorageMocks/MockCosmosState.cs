@@ -83,7 +83,7 @@ namespace PetImagesTest.StorageMocks
         {
             if (this.Database.ContainsKey(containerName))
             {
-                throw new DatabaseContainerAlreadyExists();
+                throw new DatabaseContainerAlreadyExists(cosmosException: null);
             }
         }
 
@@ -91,7 +91,7 @@ namespace PetImagesTest.StorageMocks
         {
             if (!this.Database.ContainsKey(containerName))
             {
-                throw new DatabaseContainerDoesNotExist();
+                throw new DatabaseContainerDoesNotExist(cosmosException: null);
             }
         }
 
@@ -102,7 +102,7 @@ namespace PetImagesTest.StorageMocks
 
             if (!container.ContainsKey(GetCombinedKey(partitionKey, id)))
             {
-                throw new DatabaseItemDoesNotExistException();
+                throw new DatabaseItemDoesNotExistException(cosmosException: null);
             }
         }
 
@@ -113,7 +113,7 @@ namespace PetImagesTest.StorageMocks
 
             if (container.ContainsKey(GetCombinedKey(partitionKey, id)))
             {
-                throw new DatabaseItemAlreadyExistsException();
+                throw new DatabaseItemAlreadyExistsException(cosmosException: null);
             }
         }
 
@@ -132,7 +132,7 @@ namespace PetImagesTest.StorageMocks
                 var item = container[combinedKey];
                 if (item.ETag != ifMatchEtag)
                 {
-                    throw new DatabasePreconditionFailedException();
+                    throw new DatabasePreconditionFailedException(cosmosException: null);
                 }
             }
         }

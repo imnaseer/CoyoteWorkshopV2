@@ -61,7 +61,18 @@ namespace PetImagesTest.Clients
             var response = await this.Client.GetAsync(
                 new Uri($"accounts/{accountName}/images/{imageName}/content", UriKind.RelativeOrAbsolute));
 
-            return await ConstructServiceResponseAsync<byte[]>(response);
+            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                return new ServiceResponse<byte[]>()
+                {
+                    StatusCode = System.Net.HttpStatusCode.OK,
+                    Resource = await response.Content.ReadAsByteArrayAsync()
+                };
+            }
+            else
+            {
+                return await ConstructServiceResponseAsync<byte[]>(response);
+            }
         }
 
         public async Task<ServiceResponse<byte[]>> GetImageThumbnailAsync(string accountName, string imageName)
@@ -69,7 +80,18 @@ namespace PetImagesTest.Clients
             var response = await this.Client.GetAsync(
                 new Uri($"accounts/{accountName}/images/{imageName}/thumbnail", UriKind.RelativeOrAbsolute));
 
-            return await ConstructServiceResponseAsync<byte[]>(response);
+            if (response.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                return new ServiceResponse<byte[]>()
+                {
+                    StatusCode = System.Net.HttpStatusCode.OK,
+                    Resource = await response.Content.ReadAsByteArrayAsync()
+                };
+            }
+            else
+            {
+                return await ConstructServiceResponseAsync<byte[]>(response);
+            }
         }
 
         public void Dispose()

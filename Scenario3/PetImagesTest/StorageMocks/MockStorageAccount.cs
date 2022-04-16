@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using PetImages;
 using PetImages.Exceptions;
 using PetImages.Storage;
 using System.Collections.Generic;
@@ -21,8 +22,9 @@ namespace PetImagesTest.StorageMocks
         {
             return Task.Run(() =>
             {
-                EnsureContainerDoesNotExist(containerName);
+                Logger.WriteLine($"Attempting to create storage container {containerName}");
 
+                EnsureContainerDoesNotExist(containerName);
                 Containers[containerName] = new Dictionary<string, byte[]>();
             });
         }
@@ -31,6 +33,8 @@ namespace PetImagesTest.StorageMocks
         {
             return Task.Run(() =>
             {
+                Logger.WriteLine($"Attempting to delete storage container {containerName}");
+
                 EnsureContainerExists(containerName);
                 Containers.Remove(containerName);
             });
@@ -40,18 +44,21 @@ namespace PetImagesTest.StorageMocks
         {
             return Task.Run(() =>
             {
-                EnsureContainerExists(containerName);
+                Logger.WriteLine($"Attempting to create or update block blob: container {containerName}, blob {blobName}");
 
+                EnsureContainerExists(containerName);
                 var container = Containers[containerName];
                 container[blobName] = blobContents;
             });
         }
+
         public Task<byte[]> GetBlockBlobAsync(string containerName, string blobName)
         {
             return Task.Run(() =>
             {
-                EnsureBlobExists(containerName, blobName);
+                Logger.WriteLine($"Attempting to get block blob: container {containerName} blob {blobName}");
 
+                EnsureBlobExists(containerName, blobName);
                 var container = Containers[containerName];
                 return container[blobName];
             });
@@ -61,8 +68,9 @@ namespace PetImagesTest.StorageMocks
         {
             return Task.Run(() =>
             {
-                EnsureBlobExists(containerName, blobName);
+                Logger.WriteLine($"Attempting to delete block blob: container {containerName} blob {blobName}");
 
+                EnsureBlobExists(containerName, blobName);
                 var container = Containers[containerName];
                 container.Remove(blobName);
             });
@@ -72,7 +80,7 @@ namespace PetImagesTest.StorageMocks
         {
             if (Containers.ContainsKey(containerName))
             {
-                throw new StorageContainerAlreadyExistsException();
+                throw new StorageContainerAlreadyExistsException(requestFailedException: null);
             }
         }
 
@@ -80,7 +88,7 @@ namespace PetImagesTest.StorageMocks
         {
             if (!Containers.ContainsKey(containerName))
             {
-                throw new StorageContainerDoesNotExistException();
+                throw new StorageContainerDoesNotExistException(requestFailedException: null);
             }
         }
 
@@ -92,7 +100,7 @@ namespace PetImagesTest.StorageMocks
 
             if (!container.ContainsKey(blobName))
             {
-                throw new BlobDoesNotExistException();
+                throw new BlobDoesNotExistException(requestFailedException: null);
             }
         }
     }

@@ -18,7 +18,7 @@ namespace PetImages.Middleware
 
         public async Task InvokeAsync(HttpContext httpContext)
         {
-            var requestId = Guid.NewGuid().ToString().Replace("-", string.Empty);
+            var requestId = Guid.NewGuid().ToString().Substring(0, 6);
             Logger.AsyncLocalRequestId.Value = requestId;
 
             var requestDescription = $"{httpContext.Request.Method} {httpContext.Request.Path}";

@@ -27,7 +27,7 @@ namespace PetImagesTest.Clients
     [TestClass]
     public class Tests
     {
-        private static readonly bool useInMemoryClient = true;
+        private static readonly bool useInMemoryClient = false;
 
         [TestMethod]
         public async Task TestFirstScenarioAsync()
@@ -96,6 +96,20 @@ namespace PetImagesTest.Clients
                 });
             Assert.IsTrue(createResult.StatusCode == HttpStatusCode.OK);
 
+            Image image;
+            while (true)
+            {
+                var imageResult = await serviceClient.GetImageAsync(accountName, imageName);
+                Assert.IsTrue(imageResult.StatusCode == HttpStatusCode.OK);
+
+                image = imageResult.Resource;
+                if (image.State == ImageState.Created.ToString())
+                {
+                    break;
+                }
+
+                await Task.Delay(100);
+            }
 
             var utcNow = DateTime.UtcNow;
 
@@ -412,8 +426,7 @@ namespace PetImagesTest.Clients
 
         private static async Task<IServiceClient> InitializeSystemAsync(IAsyncPolicy asyncPolicy = null)
         {
-            Logger.WriteLine("Beginning test iteration");
-            Logger.WriteLine("");
+            Logger.WriteLine("\r\nBeginning test iteration\r\n");
 
             if (useInMemoryClient)
             {

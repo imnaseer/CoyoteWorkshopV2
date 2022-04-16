@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using Microsoft.Coyote.Specifications;
+using PetImages;
 using PetImages.Messaging;
 using PetImages.Messaging.Worker;
 using PetImages.Storage;
@@ -29,6 +30,13 @@ namespace PetImagesTest.MessagingMocks
             // Fire-and-forget the task to model sending an asynchronous message over the network.
             _ = Task.Run(async () =>
             {
+                Logger.AsyncLocalRequestId.Value =
+                    Logger.RequestId +
+                    "-" +
+                    Guid.NewGuid().ToString().Substring(0, 6);
+
+                Logger.WriteLine($"Running worker for message type {message.Type}");
+
                 try
                 {
                     if (message.Type == Message.GenerateThumbnailMessageType)
@@ -43,6 +51,7 @@ namespace PetImagesTest.MessagingMocks
                 }
                 catch (Exception ex)
                 {
+                    Logger.WriteLine($"Encountered uncaught exception in worker for message type {message.Type}; no further retries will happen");
                     Specification.Assert(false, $"Uncaught exception in worker: {ex}");
                 }
             });
@@ -58,6 +67,8 @@ namespace PetImagesTest.MessagingMocks
                 try
                 {
                     workerResult = await this.GenerateThumbnailWorker.ProcessMessage(message);
+
+                    Logger.WriteLine($"Worker {message.Type} returned with result code {workerResult.ResultCode}");
                 }
                 catch (SimulatedRandomFaultException)
                 {

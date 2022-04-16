@@ -1,8 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using Azure;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using PetImages.Exceptions;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -21,80 +24,106 @@ namespace PetImages.Storage
 
         public async Task CreateContainerAsync(string containerName)
         {
-            var containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
-            await containerClient.CreateIfNotExistsAsync();
+            await PerformStorageOperationOrThrowAsync(async () =>
+            {
+                var containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
+                await containerClient.CreateIfNotExistsAsync();
+            });
         }
 
         public async Task CreateOrUpdateBlockBlobAsync(string containerName, string blobName, string contentType, byte[] blobContents)
         {
-            var containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
-            var containerExists = await containerClient.ExistsAsync();
-            if (!containerExists)
+            await PerformStorageOperationOrThrowAsync(async () =>
             {
-                throw new StorageContainerDoesNotExistException();
-            }
-
-            using (var stream = new MemoryStream())
-            {
-                // TODO: How to set content type here?
+                var containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
                 var blobClient = containerClient.GetBlobClient(blobName);
-                stream.Write(blobContents);
-                await blobClient.UploadAsync(stream);
-            }
+                using (var stream = new MemoryStream(blobContents))
+                {
+                    await blobClient.UploadAsync(
+                        stream,
+                        new BlobUploadOptions()
+                        {
+                            HttpHeaders = new BlobHttpHeaders()
+                            {
+                                ContentType = contentType
+                            }
+                        });
+                }
+            });
         }
 
         public async Task DeleteBlockBlobAsync(string containerName, string blobName)
         {
-            var containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
-            var containerExists = await containerClient.ExistsAsync();
-            if (!containerExists)
+            await PerformStorageOperationOrThrowAsync(async () =>
             {
-                throw new StorageContainerDoesNotExistException();
-            }
-
-            var blobClient = containerClient.GetBlobClient(blobName);
-            var blobExists = await blobClient.ExistsAsync();
-            if (!blobExists)
-            {
-                throw new BlobDoesNotExistException();
-            }
-
-            await blobClient.DeleteAsync();
+                var containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
+                var blobClient = containerClient.GetBlobClient(blobName);
+                await blobClient.DeleteAsync();
+            });
         }
 
         public async Task DeleteContainerAsync(string containerName)
         {
-            var containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
-            var containerExists = await containerClient.ExistsAsync();
-            if (!containerExists)
+            await PerformStorageOperationOrThrowAsync(async () =>
             {
-                throw new StorageContainerDoesNotExistException();
-            }
-
-            await containerClient.DeleteAsync();
+                var containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
+                await containerClient.DeleteAsync();
+            });
         }
 
         public async Task<byte[]> GetBlockBlobAsync(string containerName, string blobName)
         {
-            var containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
-            var containerExists = await containerClient.ExistsAsync();
-            if (!containerExists)
+            byte[] result = null;
+            await PerformStorageOperationOrThrowAsync(async () =>
             {
-                throw new StorageContainerDoesNotExistException();
-            }
+                var containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
+                var blobClient = containerClient.GetBlobClient(blobName);
+                using (var blobStream = await blobClient.OpenReadAsync())
+                {
+                    using (var memoryStream = new MemoryStream())
+                    {
+                        blobStream.CopyTo(memoryStream);
+                        result = memoryStream.ToArray();
+                    }
+                }
+            });
 
-            var blobClient = containerClient.GetBlobClient(blobName);
-            var blobExists = await blobClient.ExistsAsync();
-            if (!blobExists)
-            {
-                throw new BlobDoesNotExistException();
-            }
+            return result;
+        }
 
-            using (var blobStream = await blobClient.OpenReadAsync())
+        private async Task PerformStorageOperationOrThrowAsync(Func<Task> storageFunc)
+        {
+            try
             {
-                var memoryStream = new MemoryStream();
-                blobStream.CopyTo(memoryStream);
-                return memoryStream.ToArray();
+                await storageFunc();
+            }
+            catch (RequestFailedException requestFailedException)
+            {
+                throw StorageToDatabaseExceptionProvider(requestFailedException)();
+            }
+        }
+
+        private Func<StorageException> StorageToDatabaseExceptionProvider(RequestFailedException requestFailedException)
+        {
+            if (requestFailedException.ErrorCode == "BlobAlreadyExists")
+            {
+                return () => new BlobAlreadyExistsException(requestFailedException);
+            }
+            else if (requestFailedException.ErrorCode == "BlobNotFound")
+            {
+                return () => new BlobDoesNotExistException(requestFailedException);
+            }
+            else if (requestFailedException.ErrorCode == "ContainerAlreadyExists")
+            {
+                return () => new StorageContainerAlreadyExistsException(requestFailedException);
+            }
+            else if (requestFailedException.ErrorCode == "ContainerNotFound")
+            {
+                return () => new StorageContainerDoesNotExistException(requestFailedException);
+            }
+            else
+            {
+                return () => new StorageException(requestFailedException);
             }
         }
     }

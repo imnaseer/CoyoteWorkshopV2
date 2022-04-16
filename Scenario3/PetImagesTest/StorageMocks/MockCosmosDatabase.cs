@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using PetImages;
 using PetImages.Storage;
 using System.Threading.Tasks;
 
@@ -19,6 +20,8 @@ namespace PetImagesTest.StorageMocks
         {
             return Task.Run<ICosmosContainer>(() =>
             {
+                Logger.WriteLine($"Attempting to create CosmosDB container {containerName}");
+
                 this.State.CreateContainer(containerName);
                 return new MockCosmosContainer(containerName, this.State);
             });
@@ -28,6 +31,8 @@ namespace PetImagesTest.StorageMocks
         {
             return Task.Run<ICosmosContainer>(() =>
             {
+                Logger.WriteLine($"Attempting to get Cosmos DB container {containerName}");
+
                 this.State.EnsureContainerExistsInDatabase(containerName);
                 return new MockCosmosContainer(containerName, this.State);
             });

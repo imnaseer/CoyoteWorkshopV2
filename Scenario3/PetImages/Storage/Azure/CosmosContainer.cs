@@ -27,17 +27,11 @@ namespace PetImages.Storage
 
         public async Task DeleteItem(string partitionKey, string id, string ifMatchEtag = null)
         {
-            try
-            {
-                var response = await this.cosmosContainer.DeleteItemAsync<DbItem>(
-                id,
-                new PartitionKey(partitionKey),
-                new ItemRequestOptions() { IfMatchEtag = ifMatchEtag });
-            }
-            catch (CosmosException ex)
-            {
-                throw CosmosToDatabaseExceptionProvider(ex)();
-            }
+            _ = await this.PerformCosmosOperationOrThrowAsync<DbItem>(
+                () => this.cosmosContainer.DeleteItemAsync<DbItem>(
+                    id,
+                    new PartitionKey(partitionKey),
+                    new ItemRequestOptions() { IfMatchEtag = ifMatchEtag }));
         }
 
         public async Task<T> GetItem<T>(string partitionKey, string id) where T : DbItem
@@ -84,19 +78,19 @@ namespace PetImages.Storage
         {
             if (cosmosException.StatusCode == HttpStatusCode.NotFound)
             {
-                return () => new DatabaseItemDoesNotExistException();
+                return () => new DatabaseItemDoesNotExistException(cosmosException);
             }
             else if (cosmosException.StatusCode == HttpStatusCode.Conflict)
             {
-                return () => new DatabaseItemAlreadyExistsException();
+                return () => new DatabaseItemAlreadyExistsException(cosmosException);
             }
             else if (cosmosException.StatusCode == HttpStatusCode.PreconditionFailed)
             {
-                return () => new DatabasePreconditionFailedException();
+                return () => new DatabasePreconditionFailedException(cosmosException);
             }
             else
             {
-                return () => new DatabaseException();
+                return () => new DatabaseException(cosmosException);
             }
         }
     }
