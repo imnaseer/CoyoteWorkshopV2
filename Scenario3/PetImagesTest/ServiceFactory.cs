@@ -17,12 +17,9 @@ namespace PetImagesTest
 {
     internal class ServiceFactory : WebApplicationFactory<Startup>
     {
-        private IAccountContainer AccountContainer;
-        private IImageContainer ImageContainer;
-        private IMessagingClient MessagingClient;
-
         private readonly IStorageAccount StorageAccount;
         private readonly ICosmosDatabase CosmosDatabase;
+        private readonly IMessagingClient MessagingClient;
 
         public ServiceFactory()
         {
@@ -33,27 +30,17 @@ namespace PetImagesTest
             this.CosmosDatabase = new WrappedCosmosDatabase(
                 new MockCosmosDatabase(new MockCosmosState()),
                 RetryPolicyFactory.GetAsyncRetryExponential());
-        }
 
-        internal async Task<IAccountContainer> InitializeAccountContainerAsync()
-        {
-            this.AccountContainer = (WrappedCosmosContainer)await this.CosmosDatabase.CreateContainerAsync(Constants.AccountContainerName);
-            return this.AccountContainer;
-        }
-
-        internal async Task<IImageContainer> InitializeImageContainerAsync()
-        {
-            this.ImageContainer = (WrappedCosmosContainer)await this.CosmosDatabase.CreateContainerAsync(Constants.ImageContainerName);
-            return this.ImageContainer;
-        }
-
-        internal Task<IMessagingClient> InitializeMessagingClient()
-        {
-            var messagingClient = new MockMessagingClient(this.AccountContainer, this.ImageContainer, this.StorageAccount);
+            var messagingClient = new MockMessagingClient(this.CosmosDatabase, this.StorageAccount);
             this.MessagingClient = new WrappedMessagingClient(
                 messagingClient,
                 RetryPolicyFactory.GetAsyncRetryExponential());
-            return Task.FromResult(this.MessagingClient);
+        }
+
+        internal async Task InitializeCosmosDatabaseAsync()
+        {
+            await this.CosmosDatabase.CreateContainerIfNotExistsAsync(Constants.AccountContainerName);
+            await this.CosmosDatabase.CreateContainerIfNotExistsAsync(Constants.ImageContainerName);
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -62,8 +49,7 @@ namespace PetImagesTest
             builder.ConfigureServices(services =>
             {
                 // Inject the mocks.
-                services.AddSingleton(this.AccountContainer);
-                services.AddSingleton(this.ImageContainer);
+                services.AddSingleton(this.CosmosDatabase);
                 services.AddSingleton(this.StorageAccount);
                 services.AddSingleton(this.MessagingClient);
             });

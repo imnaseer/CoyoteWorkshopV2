@@ -13,11 +13,11 @@ namespace PetImages.Controllers
     [ApiController]
     public class AccountController : ControllerBase
     {
-        private readonly IAccountContainer AccountContainer;
+        private readonly ICosmosDatabase CosmosDatabase;
 
-        public AccountController(IAccountContainer accountContainer)
+        public AccountController(ICosmosDatabase cosmosDatabase)
         {
-            this.AccountContainer = accountContainer;
+            this.CosmosDatabase = cosmosDatabase;
         }
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace PetImages.Controllers
 
             try
             {
-                accountItem = await this.AccountContainer.CreateItem(accountItem);
+                accountItem = await this.CosmosDatabase.CreateItemAsync(Constants.AccountContainerName, accountItem);
             }
             catch (DatabaseItemAlreadyExistsException)
             {
@@ -53,7 +53,11 @@ namespace PetImages.Controllers
         {
             try
             {
-                var accountItem = await this.AccountContainer.GetItem<AccountItem>(partitionKey: accountName, id: accountName);
+                var accountItem = await this.CosmosDatabase.GetItemAsync<AccountItem>(
+                    Constants.AccountContainerName,
+                    partitionKey: accountName,
+                    id: accountName);
+
                 return this.Ok(accountItem.ToAccount());
             }
             catch (DatabaseItemDoesNotExistException)
@@ -68,7 +72,11 @@ namespace PetImages.Controllers
         {
             try
             {
-                await this.AccountContainer.DeleteItem(partitionKey: accountName, id: accountName);
+                await this.CosmosDatabase.DeleteItemAsync(
+                    Constants.AccountContainerName,
+                    partitionKey: accountName,
+                    id: accountName);
+
                 return this.Ok();
             }
             catch (DatabaseItemDoesNotExistException)
@@ -94,14 +102,15 @@ namespace PetImages.Controllers
             var accountItem = account.ToItem();
 
             if (await CosmosHelper.DoesItemExistAsync<AccountItem>(
-                this.AccountContainer,
+                this.CosmosDatabase,
+                Constants.AccountContainerName,
                 accountItem.PartitionKey,
                 accountItem.Id))
             {
                 return this.Conflict();
             }
 
-            var createdAccountItem = await this.AccountContainer.CreateItem(accountItem);
+            var createdAccountItem = await this.CosmosDatabase.CreateItemAsync(Constants.AccountContainerName, accountItem);
 
             return this.Ok(createdAccountItem.ToAccount());
         }

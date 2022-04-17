@@ -9,7 +9,7 @@ namespace PetImages
         public static readonly string AccountContainerName = "Accounts";
         public static readonly string ImageContainerName = "Images";
 
-        // !IMPORTANT: Queue Name should always be in lowercase for Azure Storage Queues
+        // Note: Queue Name should always be in lowercase for Azure Storage Queues
         public static readonly string ThumbnailQueueName = "thumbnailmessages";
     }
 }

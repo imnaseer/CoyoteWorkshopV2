@@ -15,19 +15,16 @@ namespace PetImages.Controllers
     [ApiController]
     public class ImageController : ControllerBase
     {
-        private readonly ICosmosContainer AccountContainer;
-        private readonly ICosmosContainer ImageContainer;
+        private readonly ICosmosDatabase CosmosDatabase;
         private readonly IStorageAccount StorageAccount;
         private readonly IMessagingClient MessagingClient;
 
         public ImageController(
-            IAccountContainer accountContainer,
-            IImageContainer imageContainer,
+            ICosmosDatabase cosmosDatabase,
             IStorageAccount storageAccount,
             IMessagingClient messagingClient)
         {
-            this.AccountContainer = accountContainer;
-            this.ImageContainer = imageContainer;
+            this.CosmosDatabase = cosmosDatabase;
             this.StorageAccount = storageAccount;
             this.MessagingClient = messagingClient;
         }
@@ -51,7 +48,8 @@ namespace PetImages.Controllers
             var imageItem = image.ToImageItem(accountName);
 
             var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
-                ImageContainer,
+                CosmosDatabase,
+                Constants.ImageContainerName,
                 imageItem.PartitionKey,
                 imageItem.Id);
 
@@ -59,7 +57,7 @@ namespace PetImages.Controllers
             {
                 try
                 {
-                    imageItem = await this.ImageContainer.CreateItem(imageItem);
+                    imageItem = await this.CosmosDatabase.CreateItemAsync(Constants.ImageContainerName, imageItem);
                 }
                 catch (DatabaseItemAlreadyExistsException)
                 {
@@ -77,7 +75,10 @@ namespace PetImages.Controllers
 
                 try
                 {
-                    await this.ImageContainer.UpsertItem(imageItem, maybeExistingImageItem.ETag);
+                    await this.CosmosDatabase.UpsertItemAsync(
+                        Constants.ImageContainerName,
+                        imageItem,
+                        maybeExistingImageItem.ETag);
                 }
                 catch (DatabasePreconditionFailedException)
                 {
@@ -112,7 +113,8 @@ namespace PetImages.Controllers
             var imageItem = image.ToImageItem(accountName);
             imageItem.BlobName = image.Name; // TODO: Remove this line in workshop code
             var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
-                ImageContainer,
+                this.CosmosDatabase,
+                Constants.ImageContainerName,
                 imageItem.PartitionKey,
                 imageItem.Id);
 
@@ -120,7 +122,7 @@ namespace PetImages.Controllers
             {
                 try
                 {
-                    imageItem = await this.ImageContainer.CreateItem(imageItem);
+                    imageItem = await this.CosmosDatabase.CreateItemAsync(Constants.ImageContainerName, imageItem);
                 }
                 catch (DatabaseItemAlreadyExistsException)
                 {
@@ -138,7 +140,10 @@ namespace PetImages.Controllers
 
                 try
                 {
-                    await this.ImageContainer.UpsertItem(imageItem, maybeExistingImageItem.ETag);
+                    await this.CosmosDatabase.UpsertItemAsync(
+                        Constants.ImageContainerName,
+                        imageItem,
+                        maybeExistingImageItem.ETag);
                 }
                 catch (DatabasePreconditionFailedException)
                 {
@@ -175,7 +180,8 @@ namespace PetImages.Controllers
             await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageItem.BlobName, image.ContentType, image.Content);
 
             var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
-                ImageContainer,
+                this.CosmosDatabase,
+                Constants.ImageContainerName,
                 imageItem.PartitionKey,
                 imageItem.Id);
 
@@ -183,7 +189,7 @@ namespace PetImages.Controllers
             {
                 try
                 {
-                    imageItem = await this.ImageContainer.CreateItem(imageItem);
+                    imageItem = await this.CosmosDatabase.CreateItemAsync(Constants.ImageContainerName, imageItem);
                 }
                 catch (DatabaseItemAlreadyExistsException)
                 {
@@ -201,7 +207,10 @@ namespace PetImages.Controllers
 
                 try
                 {
-                    await this.ImageContainer.UpsertItem(imageItem, maybeExistingImageItem.ETag);
+                    await this.CosmosDatabase.UpsertItemAsync(
+                        Constants.ImageContainerName,
+                        imageItem,
+                        maybeExistingImageItem.ETag);
                 }
                 catch (DatabasePreconditionFailedException)
                 {
@@ -246,7 +255,8 @@ namespace PetImages.Controllers
             await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageItem.BlobName, image.ContentType, image.Content);
 
             var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
-                ImageContainer,
+                this.CosmosDatabase,
+                Constants.ImageContainerName,
                 imageItem.PartitionKey,
                 imageItem.Id);
 
@@ -254,7 +264,7 @@ namespace PetImages.Controllers
             {
                 try
                 {
-                    imageItem = await this.ImageContainer.CreateItem(imageItem);
+                    imageItem = await this.CosmosDatabase.CreateItemAsync(Constants.ImageContainerName, imageItem);
                 }
                 catch (DatabaseItemAlreadyExistsException)
                 {
@@ -272,7 +282,10 @@ namespace PetImages.Controllers
 
                 try
                 {
-                    await this.ImageContainer.UpsertItem(imageItem, maybeExistingImageItem.ETag);
+                    await this.CosmosDatabase.UpsertItemAsync(
+                        Constants.ImageContainerName,
+                        imageItem,
+                        maybeExistingImageItem.ETag);
                 }
                 catch (DatabasePreconditionFailedException)
                 {
@@ -297,7 +310,10 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: accountName, id: imageName);
+                var imageItem = await this.CosmosDatabase.GetItemAsync<ImageItem>(
+                    Constants.ImageContainerName,
+                    partitionKey: accountName,
+                    id: imageName);
                 return this.Ok(imageItem.ToImage());
             }
             catch (DatabaseItemDoesNotExistException)
@@ -318,9 +334,16 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: accountName, id: imageName);
+                var imageItem = await this.CosmosDatabase.GetItemAsync<ImageItem>(
+                    Constants.ImageContainerName,
+                    partitionKey: accountName,
+                    id: imageName);
 
-                await this.ImageContainer.DeleteItem(partitionKey: accountName, id: imageName);
+                await this.CosmosDatabase.DeleteItemAsync(
+                    Constants.ImageContainerName,
+                    partitionKey: accountName,
+                    id: imageName);
+
                 await StorageHelper.DeleteBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.BlobName);
 
                 return this.Ok();
@@ -346,7 +369,11 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: accountName, id: imageName);
+                var imageItem = await this.CosmosDatabase.GetItemAsync<ImageItem>(
+                    Constants.ImageContainerName,
+                    partitionKey: accountName,
+                    id: imageName);
+
                 var maybeBytes = await StorageHelper.GetBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.BlobName);
 
                 if (maybeBytes == null)
@@ -376,7 +403,11 @@ namespace PetImages.Controllers
 
             try
             {
-                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: accountName, id: imageName);
+                var imageItem = await this.CosmosDatabase.GetItemAsync<ImageItem>(
+                    Constants.ImageContainerName,
+                    partitionKey: accountName,
+                    id: imageName);
+
                 var maybeBytes = await StorageHelper.GetBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.ThumbnailBlobName);
 
                 if (maybeBytes == null)
@@ -425,7 +456,11 @@ namespace PetImages.Controllers
 
         private async Task<Error> ValidateAccountAsync(string accountName)
         {
-            if (!await CosmosHelper.DoesItemExistAsync<AccountItem>(AccountContainer, partitionKey: accountName, id: accountName))
+            if (!await CosmosHelper.DoesItemExistAsync<AccountItem>(
+                CosmosDatabase,
+                Constants.AccountContainerName,
+                partitionKey: accountName,
+                id: accountName))
             {
                 return ErrorFactory.AccountDoesNotExistError(accountName);
             }

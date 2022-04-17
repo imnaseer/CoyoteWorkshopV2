@@ -15,17 +15,17 @@ namespace PetImages.Exceptions
         }
     }
 
-    public class DatabaseContainerAlreadyExists : DatabaseException
+    public class DatabaseContainerAlreadyExistsException : DatabaseException
     {
-        public DatabaseContainerAlreadyExists(CosmosException cosmosException)
+        public DatabaseContainerAlreadyExistsException(CosmosException cosmosException)
             : base(cosmosException)
         {
         }
     }
 
-    public class DatabaseContainerDoesNotExist : DatabaseException
+    public class DatabaseContainerDoesNotExistException : DatabaseException
     {
-        public DatabaseContainerDoesNotExist(CosmosException cosmosException)
+        public DatabaseContainerDoesNotExistException(CosmosException cosmosException)
             : base(cosmosException)
         {
         }

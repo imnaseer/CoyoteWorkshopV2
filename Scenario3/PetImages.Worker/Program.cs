@@ -19,13 +19,10 @@ namespace PetImages.Worker
             Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostContext, services) =>
                 {
-                    var cosmosDatabase = CosmosDatabase.Create(Constants.DatabaseName);
-                    var accountContainer = cosmosDatabase.GetContainerAsync(Constants.AccountContainerName).Result;
-                    var imageContainer = cosmosDatabase.GetContainerAsync(Constants.ImageContainerName).Result;
+                    var cosmosDatabase = CosmosDatabase.CreateDatabaseIfNotExists(Constants.DatabaseName);
                     var storageAccount = new AzureStorageAccount();
 
-                    services.AddSingleton(accountContainer);
-                    services.AddSingleton((IImageContainer)imageContainer);
+                    services.AddSingleton<ICosmosDatabase>(cosmosDatabase);
                     services.AddSingleton<IStorageAccount>(storageAccount);
                     services.AddSingleton<IMessageReceiver>(_ => new StorageMessageReceiverClient(Constants.ThumbnailQueueName));
                     services.AddSingleton<IMessagingClient>(_ => new StorageMessagingClient(Constants.ThumbnailQueueName));

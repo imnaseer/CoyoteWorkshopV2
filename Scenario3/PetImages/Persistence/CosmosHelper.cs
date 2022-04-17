@@ -9,12 +9,12 @@ namespace PetImages.Persistence
 {
     public static class CosmosHelper
     {
-        public static async Task<bool> DoesItemExistAsync<T>(ICosmosContainer container, string partitionKey, string id)
+        public static async Task<bool> DoesItemExistAsync<T>(ICosmosDatabase database, string containerName, string partitionKey, string id)
             where T : DbItem
         {
             try
             {
-                await container.GetItem<T>(partitionKey, id);
+                await database.GetItemAsync<T>(containerName, partitionKey, id);
                 return true;
             }
             catch (DatabaseItemDoesNotExistException)
@@ -23,12 +23,12 @@ namespace PetImages.Persistence
             }
         }
 
-        public static async Task<T> GetItemIfExistsAsync<T>(ICosmosContainer container, string partitionKey, string id)
+        public static async Task<T> GetItemIfExistsAsync<T>(ICosmosDatabase database, string containerName, string partitionKey, string id)
             where T : DbItem
         {
             try
             {
-                return await container.GetItem<T>(partitionKey, id);
+                return await database.GetItemAsync<T>(containerName, partitionKey, id);
             }
             catch (DatabaseItemDoesNotExistException)
             {

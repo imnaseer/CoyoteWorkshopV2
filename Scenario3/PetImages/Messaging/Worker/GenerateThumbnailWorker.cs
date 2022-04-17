@@ -14,17 +14,14 @@ namespace PetImages.Worker
 {
     public class GenerateThumbnailWorker : IWorker
     {
-        private readonly ICosmosContainer AccountContainer;
-        private readonly ICosmosContainer ImageContainer;
+        private readonly ICosmosDatabase CosmosDatabase;
         private readonly IStorageAccount StorageAccount;
 
         public GenerateThumbnailWorker(
-            IAccountContainer accountContainer,
-            IImageContainer imageContainer,
+            ICosmosDatabase cosmosDatabase,
             IStorageAccount storageAccount)
         {
-            this.AccountContainer = accountContainer;
-            this.ImageContainer = imageContainer;
+            this.CosmosDatabase = cosmosDatabase;
             this.StorageAccount = storageAccount;
         }
 
@@ -37,7 +34,8 @@ namespace PetImages.Worker
             var requestId = thumbnailMessage.RequestId;
 
             var maybeImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
-                this.ImageContainer,
+                this.CosmosDatabase,
+                Constants.ImageContainerName,
                 partitionKey: accountName,
                 id: imageName);
 
@@ -69,7 +67,10 @@ namespace PetImages.Worker
 
             try
             {
-                await this.ImageContainer.ReplaceItem(maybeImageItem, ifMatchEtag: maybeImageItem.ETag);
+                await this.CosmosDatabase.ReplaceItemAsync(
+                    Constants.ImageContainerName,
+                    maybeImageItem,
+                    ifMatchEtag: maybeImageItem.ETag);
             }
             catch (DatabasePreconditionFailedException)
             {

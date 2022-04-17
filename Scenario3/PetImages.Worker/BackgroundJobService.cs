@@ -24,10 +24,10 @@ namespace PetImages.Worker
 
         private readonly int WaitingDelayInMs = 10000;
 
-        public BackgroundJobService(ILogger<BackgroundJobService> logger, IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount storageAccount, IMessageReceiver messageReceiver, IMessagingClient messagingClient)
+        public BackgroundJobService(ILogger<BackgroundJobService> logger, ICosmosDatabase cosmosDatabase, IStorageAccount storageAccount, IMessageReceiver messageReceiver, IMessagingClient messagingClient)
         {
             _logger = logger;
-            this.GenerateThumbnailWorker = new GenerateThumbnailWorker(accountContainer, imageContainer, storageAccount);
+            this.GenerateThumbnailWorker = new GenerateThumbnailWorker(cosmosDatabase, storageAccount);
             this.MessageReceiver = messageReceiver;
             this.MessagingClient = messagingClient;
         }

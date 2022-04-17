@@ -39,19 +39,14 @@ namespace PetImages
             });
 
             // Add CosmosServices
-            services.AddSingleton<ICosmosDatabase>(s => CosmosDatabase.Create(Constants.DatabaseName));
-            services.AddSingleton<IAccountContainer>(s =>
+            services.AddSingleton<ICosmosDatabase>(s =>
             {
-                var cosmosDatabase = s.GetService<ICosmosDatabase>();
-                var accountCosmosContainer = cosmosDatabase.CreateContainerAsync(Constants.AccountContainerName).Result;
-                return (IAccountContainer)accountCosmosContainer;
-            });
+                var database = CosmosDatabase.CreateDatabaseIfNotExists(Constants.DatabaseName);
 
-            services.AddSingleton<IImageContainer>(s =>
-            {
-                var cosmosDatabase = s.GetService<ICosmosDatabase>();
-                var imageCosmosContainer = cosmosDatabase.CreateContainerAsync(Constants.ImageContainerName).Result;
-                return (IImageContainer)imageCosmosContainer;
+                database.CreateContainerIfNotExistsAsync(Constants.AccountContainerName).Wait();
+                database.CreateContainerIfNotExistsAsync(Constants.ImageContainerName).Wait();
+
+                return database;
             });
 
             // Add BlobStorage Services

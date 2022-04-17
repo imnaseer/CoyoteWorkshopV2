@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using PetImages.CosmosContracts;
 using Polly;
 using System.Threading.Tasks;
 
@@ -18,22 +19,34 @@ namespace PetImages.Persistence
             this.AsyncPolicy = asyncPolicy;
         }
 
-        public async Task<ICosmosContainer> CreateContainerAsync(string containerName)
+        public Task CreateContainerIfNotExistsAsync(string containerName)
         {
-            var cosmosContainer = await CosmosDatabase.CreateContainerAsync(containerName);
-
-            return new WrappedCosmosContainer(
-                cosmosContainer,
-                AsyncPolicy);
+            return this.AsyncPolicy.ExecuteAsync(() => this.CosmosDatabase.CreateContainerIfNotExistsAsync(containerName));
         }
 
-        public async Task<ICosmosContainer> GetContainerAsync(string containerName)
+        public Task<T> CreateItemAsync<T>(string containerName, T row) where T : DbItem
         {
-            var cosmosContainer = await CosmosDatabase.GetContainerAsync(containerName);
+            return this.AsyncPolicy.ExecuteAsync(() => this.CosmosDatabase.CreateItemAsync(containerName, row));
+        }
 
-            return new WrappedCosmosContainer(
-                cosmosContainer,
-                AsyncPolicy);
+        public Task DeleteItemAsync(string containerName, string partitionKey, string id, string ifMatchEtag = null)
+        {
+            return this.AsyncPolicy.ExecuteAsync(() => this.CosmosDatabase.DeleteItemAsync(containerName, partitionKey, id, ifMatchEtag));
+        }
+
+        public Task<T> GetItemAsync<T>(string containerName, string partitionKey, string id) where T : DbItem
+        {
+            return this.AsyncPolicy.ExecuteAsync(() => this.CosmosDatabase.GetItemAsync<T>(containerName, partitionKey, id));
+        }
+
+        public Task<T> ReplaceItemAsync<T>(string containerName, T row, string ifMatchEtag = null) where T : DbItem
+        {
+            return this.AsyncPolicy.ExecuteAsync(() => this.CosmosDatabase.ReplaceItemAsync(containerName, row, ifMatchEtag));
+        }
+
+        public Task<T> UpsertItemAsync<T>(string containerName, T row, string ifMatchEtag = null) where T : DbItem
+        {
+            return this.AsyncPolicy.ExecuteAsync(() => this.CosmosDatabase.UpsertItemAsync(containerName, row, ifMatchEtag));
         }
     }
 }

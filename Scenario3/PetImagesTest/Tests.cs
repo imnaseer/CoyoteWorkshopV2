@@ -27,7 +27,7 @@ namespace PetImagesTest.Clients
     [TestClass]
     public class Tests
     {
-        private static readonly bool useInMemoryClient = false;
+        private static readonly bool useInMemoryClient = true;
 
         [TestMethod]
         public async Task TestFirstScenarioAsync()
@@ -331,8 +331,9 @@ namespace PetImagesTest.Clients
         public async Task TestFifthScenarioAsync()
         {
             var randomizedFaultPolicy = TestRetryPolicyFactory.GetRandomPermanentFailureAsyncPolicy();
-            var serviceClient = await InitializeSystemAsync(randomizedFaultPolicy);
             randomizedFaultPolicy.ShouldRandomlyFail = false;
+
+            var serviceClient = await InitializeSystemAsync(randomizedFaultPolicy);
 
             string accountName = "MyAccount";
             string imageName = "pet.jpg";
@@ -437,23 +438,23 @@ namespace PetImagesTest.Clients
                     asyncPolicy = RetryPolicyFactory.GetAsyncRetryExponential();
                 }
 
-                var database = new WrappedCosmosDatabase(
+                var cosmosDatabase = new WrappedCosmosDatabase(
                     new MockCosmosDatabase(cosmosState),
                     asyncPolicy);
-                var accountContainer = (IAccountContainer)await database.CreateContainerAsync(Constants.AccountContainerName);
-                var imageContainer = (IImageContainer)await database.CreateContainerAsync(Constants.ImageContainerName);
+
+                await cosmosDatabase.CreateContainerIfNotExistsAsync(Constants.AccountContainerName);
+                await cosmosDatabase.CreateContainerIfNotExistsAsync(Constants.ImageContainerName);
 
                 var storageAccount = new WrappedStorageAccount(
                     new MockStorageAccount(),
                     asyncPolicy);
 
                 var messagingClient = new WrappedMessagingClient(
-                    new MockMessagingClient(accountContainer, imageContainer, storageAccount),
+                    new MockMessagingClient(cosmosDatabase, storageAccount),
                     asyncPolicy);
 
                 var serviceClient = new InMemoryTestServiceClient(
-                    accountContainer,
-                    imageContainer,
+                    cosmosDatabase,
                     storageAccount,
                     messagingClient);
 
@@ -462,9 +463,7 @@ namespace PetImagesTest.Clients
             else
             {
                 var factory = new ServiceFactory();
-                await factory.InitializeAccountContainerAsync();
-                await factory.InitializeImageContainerAsync();
-                await factory.InitializeMessagingClient();
+                await factory.InitializeCosmosDatabaseAsync();
 
                 return new TestServiceClient(factory);
             }

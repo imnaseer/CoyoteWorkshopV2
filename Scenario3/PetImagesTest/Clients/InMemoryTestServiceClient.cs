@@ -16,25 +16,23 @@ namespace PetImagesTest.Clients
 {
     public class InMemoryTestServiceClient : IServiceClient
     {
-        private readonly IAccountContainer accountContainer;
-        private readonly IImageContainer imageContainer;
+        private readonly ICosmosDatabase cosmosDatabase;
         private readonly IStorageAccount blobContainer;
         private readonly IMessagingClient messagingClient;
 
-        public InMemoryTestServiceClient(IAccountContainer accountContainer)
-            : this(accountContainer, null, null, null)
+        public InMemoryTestServiceClient(ICosmosDatabase cosmosDatabase)
+            : this(cosmosDatabase, null, null)
         {
         }
 
-        public InMemoryTestServiceClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer)
-            : this(accountContainer, imageContainer, blobContainer, null)
+        public InMemoryTestServiceClient(ICosmosDatabase cosmosDatabase, IStorageAccount blobContainer)
+            : this(cosmosDatabase, blobContainer, null)
         {
         }
 
-        public InMemoryTestServiceClient(IAccountContainer accountContainer, IImageContainer imageContainer, IStorageAccount blobContainer, IMessagingClient messagingClient)
+        public InMemoryTestServiceClient(ICosmosDatabase cosmosDatabase, IStorageAccount blobContainer, IMessagingClient messagingClient)
         {
-            this.accountContainer = accountContainer;
-            this.imageContainer = imageContainer;
+            this.cosmosDatabase = cosmosDatabase;
             this.blobContainer = blobContainer;
             this.messagingClient = messagingClient;
         }
@@ -46,7 +44,7 @@ namespace PetImagesTest.Clients
 
             return await Task.Run(async () =>
             {
-                var controller = new AccountController(this.accountContainer);
+                var controller = new AccountController(this.cosmosDatabase);
                 var actionResult = await InvokeControllerActionAsync(
                     HttpMethods.Post,
                     new Uri($"/accounts", UriKind.RelativeOrAbsolute),
@@ -61,7 +59,7 @@ namespace PetImagesTest.Clients
 
             return await Task.Run(async () =>
             {
-                var controller = new ImageController(this.accountContainer, this.imageContainer, this.blobContainer, this.messagingClient);
+                var controller = new ImageController(this.cosmosDatabase, this.blobContainer, this.messagingClient);
                 var actionResult = await InvokeControllerActionAsync(
                     HttpMethods.Put,
                     new Uri($"/accounts/{accountName}/images", UriKind.RelativeOrAbsolute),
@@ -74,7 +72,7 @@ namespace PetImagesTest.Clients
         {
             return await Task.Run(async () =>
             {
-                var controller = new ImageController(this.accountContainer, this.imageContainer, this.blobContainer, this.messagingClient);
+                var controller = new ImageController(this.cosmosDatabase, this.blobContainer, this.messagingClient);
                 var actionResult = await InvokeControllerActionAsync(
                     HttpMethods.Get,
                     new Uri($"/accounts/{accountName}/images/{imageName}", UriKind.RelativeOrAbsolute),
@@ -87,7 +85,7 @@ namespace PetImagesTest.Clients
         {
             return await Task.Run(async () =>
             {
-                var controller = new ImageController(this.accountContainer, this.imageContainer, this.blobContainer, this.messagingClient);
+                var controller = new ImageController(this.cosmosDatabase, this.blobContainer, this.messagingClient);
                 var actionResult = await InvokeControllerActionAsync(
                     HttpMethods.Get,
                     new Uri($"/accounts/{accountName}/images/{imageName}/content", UriKind.RelativeOrAbsolute),
@@ -100,7 +98,7 @@ namespace PetImagesTest.Clients
         {
             return await Task.Run(async () =>
             {
-                var controller = new ImageController(this.accountContainer, this.imageContainer, this.blobContainer, this.messagingClient);
+                var controller = new ImageController(this.cosmosDatabase, this.blobContainer, this.messagingClient);
                 var actionResult = await InvokeControllerActionAsync(
                     HttpMethods.Get,
                     new Uri($"/accounts/{accountName}/images/{imageName}/thumbnail", UriKind.RelativeOrAbsolute),
@@ -152,9 +150,29 @@ namespace PetImagesTest.Clients
                     StatusCode = (HttpStatusCode)statusCodeResult.StatusCode,
                 };
             }
+            else if (response is FileContentResult fileContentResult)
+            {
+                return new ServiceResponse<T>()
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Resource = CastToT<T>(fileContentResult.FileContents)
+                };
+            }
             else
             {
                 throw new InvalidOperationException();
+            }
+        }
+
+        private static T CastToT<T>(object o)
+        {
+            if (o is T)
+            {
+                return (T)o;
+            }
+            else
+            {
+                throw new InvalidCastException();
             }
         }
     }

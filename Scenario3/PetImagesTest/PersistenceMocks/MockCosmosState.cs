@@ -83,7 +83,7 @@ namespace PetImagesTest.PersistenceMocks
         {
             if (this.Database.ContainsKey(containerName))
             {
-                throw new DatabaseContainerAlreadyExists(cosmosException: null);
+                throw new DatabaseContainerAlreadyExistsException(cosmosException: null);
             }
         }
 
@@ -91,7 +91,7 @@ namespace PetImagesTest.PersistenceMocks
         {
             if (!this.Database.ContainsKey(containerName))
             {
-                throw new DatabaseContainerDoesNotExist(cosmosException: null);
+                throw new DatabaseContainerDoesNotExistException(cosmosException: null);
             }
         }
 
