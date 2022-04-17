@@ -4,7 +4,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PetImages.Messaging;
-using PetImages.Messaging.Worker;
 using PetImages.Persistence;
 using System;
 using System.Threading;

@@ -2,13 +2,12 @@
 // Licensed under the MIT License.
 
 using PetImages.Messaging;
-using PetImages.Messaging.Worker;
 using System.Threading.Tasks;
 
 namespace PetImages.Worker
 {
-    public interface IWorker
+    public interface IMessageReceiver
     {
-        Task<WorkerResult> ProcessMessage(Message message);
+        Task<Message> ReadMessage();
     }
 }

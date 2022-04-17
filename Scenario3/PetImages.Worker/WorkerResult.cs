@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PetImages.Messaging.Worker
+namespace PetImages.Worker
 {
     public class WorkerResult
     {

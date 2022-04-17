@@ -5,7 +5,6 @@ using PetImages.Contracts;
 using PetImages.CosmosContracts;
 using PetImages.Exceptions;
 using PetImages.Messaging;
-using PetImages.Messaging.Worker;
 using PetImages.Persistence;
 using System;
 using System.Threading.Tasks;

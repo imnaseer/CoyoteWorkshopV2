@@ -11,6 +11,7 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\PetImages\PetImages.csproj" />
+		<ProjectReference Include="..\PetImages.Worker\PetImages.Worker.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.4" />

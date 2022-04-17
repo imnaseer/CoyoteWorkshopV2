@@ -4,7 +4,6 @@
 using Microsoft.Coyote.Specifications;
 using PetImages;
 using PetImages.Messaging;
-using PetImages.Messaging.Worker;
 using PetImages.Persistence;
 using PetImages.Worker;
 using PetImagesTest.Exceptions;

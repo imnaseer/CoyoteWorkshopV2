@@ -3,9 +3,10 @@
 
 using Azure.Storage.Queues;
 using Newtonsoft.Json;
+using PetImages.Messaging;
 using System.Threading.Tasks;
 
-namespace PetImages.Messaging
+namespace PetImages.Worker
 {
     public class StorageMessageReceiverClient : IMessageReceiver
     {
