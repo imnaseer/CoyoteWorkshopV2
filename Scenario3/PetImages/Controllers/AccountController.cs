@@ -3,9 +3,9 @@
 
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
-using PetImages.Entities;
+using PetImages.CosmosContracts;
 using PetImages.Exceptions;
-using PetImages.Storage;
+using PetImages.Persistence;
 using System.Threading.Tasks;
 
 namespace PetImages.Controllers

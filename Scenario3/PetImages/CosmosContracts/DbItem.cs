@@ -3,7 +3,7 @@
 
 using Newtonsoft.Json;
 
-namespace PetImages.Entities
+namespace PetImages.CosmosContracts
 {
     public abstract class DbItem
     {

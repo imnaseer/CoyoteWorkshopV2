@@ -1,14 +1,14 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PetImages.Entities;
+using PetImages.CosmosContracts;
 using PetImages.Exceptions;
 using System;
-using Container = System.Collections.Generic.Dictionary<string, PetImages.Entities.DbItem>;
+using Container = System.Collections.Generic.Dictionary<string, PetImages.CosmosContracts.DbItem>;
 using Database = System.Collections.Generic.Dictionary<
-    string, System.Collections.Generic.Dictionary<string, PetImages.Entities.DbItem>>;
+    string, System.Collections.Generic.Dictionary<string, PetImages.CosmosContracts.DbItem>>;
 
-namespace PetImagesTest.StorageMocks
+namespace PetImagesTest.PersistenceMocks
 {
     public class MockCosmosState
     {

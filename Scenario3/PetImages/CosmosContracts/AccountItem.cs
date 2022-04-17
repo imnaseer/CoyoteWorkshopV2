@@ -3,7 +3,7 @@
 
 using PetImages.Contracts;
 
-namespace PetImages.Entities
+namespace PetImages.CosmosContracts
 {
     public class AccountItem : DbItem
     {

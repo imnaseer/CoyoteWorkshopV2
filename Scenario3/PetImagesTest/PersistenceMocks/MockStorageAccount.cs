@@ -3,11 +3,11 @@
 
 using PetImages;
 using PetImages.Exceptions;
-using PetImages.Storage;
+using PetImages.Persistence;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace PetImagesTest.StorageMocks
+namespace PetImagesTest.PersistenceMocks
 {
     internal class MockStorageAccount : IStorageAccount
     {

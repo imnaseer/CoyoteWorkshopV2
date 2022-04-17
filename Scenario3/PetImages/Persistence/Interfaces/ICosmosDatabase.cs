@@ -3,7 +3,7 @@
 
 using System.Threading.Tasks;
 
-namespace PetImages.Storage
+namespace PetImages.Persistence
 {
     /// <summary>
     /// Interface of a Cosmos DB database. This can be implemented

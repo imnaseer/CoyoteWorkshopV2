@@ -9,7 +9,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace PetImages.Storage
+namespace PetImages.Persistence
 {
     public class AzureStorageAccount : IStorageAccount
     {

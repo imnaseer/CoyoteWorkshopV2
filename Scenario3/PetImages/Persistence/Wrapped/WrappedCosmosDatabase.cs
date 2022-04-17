@@ -4,7 +4,7 @@
 using Polly;
 using System.Threading.Tasks;
 
-namespace PetImages.Storage
+namespace PetImages.Persistence
 {
     public class WrappedCosmosDatabase : ICosmosDatabase
     {

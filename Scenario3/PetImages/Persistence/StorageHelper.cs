@@ -4,7 +4,7 @@
 using PetImages.Exceptions;
 using System.Threading.Tasks;
 
-namespace PetImages.Storage
+namespace PetImages.Persistence
 {
     public static class StorageHelper
     {

@@ -2,10 +2,10 @@
 // Licensed under the MIT License.
 
 using PetImages;
-using PetImages.Storage;
+using PetImages.Persistence;
 using System.Threading.Tasks;
 
-namespace PetImagesTest.StorageMocks
+namespace PetImagesTest.PersistenceMocks
 {
     public class MockCosmosDatabase : ICosmosDatabase
     {

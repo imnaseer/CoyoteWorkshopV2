@@ -4,7 +4,7 @@
 using PetImages.Contracts;
 using System;
 
-namespace PetImages.Entities
+namespace PetImages.CosmosContracts
 {
     public class ImageItem : DbItem
     {

@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 using PetImages;
-using PetImages.Entities;
-using PetImages.Storage;
+using PetImages.CosmosContracts;
+using PetImages.Persistence;
 using System.Threading.Tasks;
 
-namespace PetImagesTest.StorageMocks
+namespace PetImagesTest.PersistenceMocks
 {
     public class MockCosmosContainer : ICosmosContainer, IAccountContainer, IImageContainer
     {

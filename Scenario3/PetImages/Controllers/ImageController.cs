@@ -3,10 +3,10 @@
 
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
-using PetImages.Entities;
+using PetImages.CosmosContracts;
 using PetImages.Exceptions;
 using PetImages.Messaging;
-using PetImages.Storage;
+using PetImages.Persistence;
 using System;
 using System.Threading.Tasks;
 

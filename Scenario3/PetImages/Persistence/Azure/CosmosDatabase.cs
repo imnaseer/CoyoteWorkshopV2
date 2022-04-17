@@ -4,7 +4,7 @@
 using Microsoft.Azure.Cosmos;
 using System.Threading.Tasks;
 
-namespace PetImages.Storage
+namespace PetImages.Persistence
 {
     public class CosmosDatabase : ICosmosDatabase
     {

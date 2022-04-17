@@ -1,11 +1,11 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PetImages.Entities;
+using PetImages.CosmosContracts;
 using Polly;
 using System.Threading.Tasks;
 
-namespace PetImages.Storage
+namespace PetImages.Persistence
 {
     public class WrappedCosmosContainer : ICosmosContainer, IAccountContainer, IImageContainer
     {

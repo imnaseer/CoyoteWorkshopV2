@@ -2,11 +2,11 @@
 // Licensed under the MIT License.
 
 using PetImages.Contracts;
-using PetImages.Entities;
+using PetImages.CosmosContracts;
 using PetImages.Exceptions;
 using PetImages.Messaging;
 using PetImages.Messaging.Worker;
-using PetImages.Storage;
+using PetImages.Persistence;
 using System;
 using System.Threading.Tasks;
 

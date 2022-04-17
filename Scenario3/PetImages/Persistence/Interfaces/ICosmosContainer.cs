@@ -1,10 +1,10 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PetImages.Entities;
+using PetImages.CosmosContracts;
 using System.Threading.Tasks;
 
-namespace PetImages.Storage
+namespace PetImages.Persistence
 {
     /// <summary>
     /// Interface of a Cosmos DB container. This can be implemented

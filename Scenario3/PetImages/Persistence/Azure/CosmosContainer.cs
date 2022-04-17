@@ -2,13 +2,13 @@
 // Licensed under the MIT License.
 
 using Microsoft.Azure.Cosmos;
-using PetImages.Entities;
+using PetImages.CosmosContracts;
 using PetImages.Exceptions;
 using System;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace PetImages.Storage
+namespace PetImages.Persistence
 {
     public class CosmosContainer : ICosmosContainer, IImageContainer, IAccountContainer
     {

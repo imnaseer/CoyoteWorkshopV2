@@ -10,7 +10,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using PetImages.Messaging;
 using PetImages.Middleware;
-using PetImages.Storage;
+using PetImages.Persistence;
 
 namespace PetImages
 {

@@ -7,9 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using PetImages;
 using PetImages.Messaging;
 using PetImages.RetryFramework;
-using PetImages.Storage;
+using PetImages.Persistence;
 using PetImagesTest.MessagingMocks;
-using PetImagesTest.StorageMocks;
+using PetImagesTest.PersistenceMocks;
 using System.IO;
 using System.Threading.Tasks;
 

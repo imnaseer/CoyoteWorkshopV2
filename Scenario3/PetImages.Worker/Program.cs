@@ -4,7 +4,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PetImages.Messaging;
-using PetImages.Storage;
+using PetImages.Persistence;
 
 namespace PetImages.Worker
 {

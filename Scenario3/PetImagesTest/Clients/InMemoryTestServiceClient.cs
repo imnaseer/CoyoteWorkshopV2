@@ -7,7 +7,7 @@ using PetImages.Contracts;
 using PetImages.Controllers;
 using PetImages.Messaging;
 using PetImages.Middleware;
-using PetImages.Storage;
+using PetImages.Persistence;
 using System;
 using System.Net;
 using System.Threading.Tasks;

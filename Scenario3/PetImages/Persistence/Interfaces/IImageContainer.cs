@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-namespace PetImages.Storage
+namespace PetImages.Persistence
 {
     public interface IImageContainer : ICosmosContainer
     {

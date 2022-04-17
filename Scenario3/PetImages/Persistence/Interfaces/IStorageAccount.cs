@@ -3,7 +3,7 @@
 
 using System.Threading.Tasks;
 
-namespace PetImages.Storage
+namespace PetImages.Persistence
 {
     /// <summary>
     /// Interface of an Azure Storage blob container provider. This can be implemented
