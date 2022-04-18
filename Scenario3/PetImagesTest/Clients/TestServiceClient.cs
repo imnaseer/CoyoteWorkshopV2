@@ -41,7 +41,7 @@ namespace PetImagesTest.Clients
 
         public async Task<ServiceResponse<Image>> CreateOrUpdateImageAsync(string accountName, Image image)
         {
-            var response = await this.Client.PostAsync(
+            var response = await this.Client.PutAsync(
                 new Uri($"accounts/{accountName}/images", UriKind.RelativeOrAbsolute),
                 JsonContent.Create(image));
 
@@ -60,25 +60,6 @@ namespace PetImagesTest.Clients
         {
             var response = await this.Client.GetAsync(
                 new Uri($"accounts/{accountName}/images/{imageName}/content", UriKind.RelativeOrAbsolute));
-
-            if (response.StatusCode == System.Net.HttpStatusCode.OK)
-            {
-                return new ServiceResponse<byte[]>()
-                {
-                    StatusCode = System.Net.HttpStatusCode.OK,
-                    Resource = await response.Content.ReadAsByteArrayAsync()
-                };
-            }
-            else
-            {
-                return await ConstructServiceResponseAsync<byte[]>(response);
-            }
-        }
-
-        public async Task<ServiceResponse<byte[]>> GetImageThumbnailAsync(string accountName, string imageName)
-        {
-            var response = await this.Client.GetAsync(
-                new Uri($"accounts/{accountName}/images/{imageName}/thumbnail", UriKind.RelativeOrAbsolute));
 
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
             {

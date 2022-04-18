@@ -3,9 +3,13 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Coyote.Web;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OpenApi.Models;
+using PetImages.Middleware;
+using PetImages.Persistence;
 
 namespace PetImages
 {
@@ -22,6 +26,26 @@ namespace PetImages
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo()
+                {
+                    Title = "PetImages API",
+                    Version = "v1",
+                    Description = "Description for the API goes here.",
+                });
+            });
+
+            // Add CosmosServices
+            services.AddSingleton<ICosmosDatabase>(s =>
+            {
+                var database = CosmosDatabase.CreateDatabaseIfNotExists(Constants.DatabaseName);
+
+                database.CreateContainerIfNotExistsAsync(Constants.AccountContainerName).Wait();
+
+                return database;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -31,6 +55,19 @@ namespace PetImages
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            // Add Coyote Middleware that takes control of the controllers during testing.
+            app.UseRequestController();
+
+            app.UseMiddleware<RequestIdMiddleware>();
+
+            app.UseSwagger();
+
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "PetImages API");
+                c.RoutePrefix = string.Empty;
+            });
 
             app.UseHttpsRedirection();
 

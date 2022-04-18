@@ -63,7 +63,7 @@ namespace PetImagesTest.Clients
                 var actionResult = await InvokeControllerActionAsync(
                     HttpMethods.Put,
                     new Uri($"/accounts/{accountName}/images", UriKind.RelativeOrAbsolute),
-                    async () => await controller.CreateImageFourthScenarioAsync(accountName, imageCopy));
+                    async () => await controller.CreateOrUpdateImageAsync(accountName, imageCopy));
                 return ExtractServiceResponse<Image>(actionResult.Result);
             });
         }

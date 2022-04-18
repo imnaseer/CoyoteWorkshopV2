@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 
 using Microsoft.Coyote;
+using Microsoft.Coyote.Specifications;
 using Microsoft.Coyote.SystematicTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PetImages;
 using PetImages.Contracts;
-using PetImagesTest.Clients;
-using PetImagesTest.StorageMocks;
+using PetImagesTest.PersistenceMocks;
 using System;
 using System.Globalization;
 using System.IO;
@@ -15,31 +15,36 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace PetImagesTest
+namespace PetImagesTest.Clients
 {
     [TestClass]
     public class Tests
     {
-        [TestMethod]
-        public async Task TestFirstScenario()
-        {
-            // Initialize the mock in-memory DB and account manager.
-            var cosmosState = new MockCosmosState();
-            var database = new MockCosmosDatabase(cosmosState);
-            var accountContainer = await database.CreateContainerAsync(Constants.AccountContainerName);
-            var imageContainer = await database.CreateContainerAsync(Constants.ImageContainerName);
-            var petImagesClient = new TestPetImagesClient(accountContainer, imageContainer);
+        private static readonly bool useInMemoryClient = true;
 
-            // Create an account request payload
-            var account = new Account()
+        [TestMethod]
+        public async Task TestFirstScenarioAsync()
+        {
+            var serviceClient = await InitializeSystemAsync();
+
+            var accountName = "MyAccount";
+
+            var account1 = new Account()
             {
-                Name = "MyAccount"
+                Name = accountName,
+                ContactEmailAddress = "john@acme.com"
+            };
+
+            var account2 = new Account()
+            {
+                Name = accountName,
+                ContactEmailAddress = "sally@contoso.com"
             };
 
             // Call CreateAccount twice without awaiting, which makes both methods run
             // asynchronously with each other.
-            var task1 = petImagesClient.CreateAccountAsync(account);
-            var task2 = petImagesClient.CreateAccountAsync(account);
+            var task1 = serviceClient.CreateAccountAsync(account1);
+            var task2 = serviceClient.CreateAccountAsync(account2);
 
             // Then wait both requests to complete.
             await Task.WhenAll(task1, task2);
@@ -56,132 +61,180 @@ namespace PetImagesTest
         }
 
         [TestMethod]
-        public void SystematicTestFirstScenario()
+        public async Task TestSecondScenarioUpdateAsync()
         {
-            RunSystematicTest(TestFirstScenario);
-        }
-
-        [TestMethod]
-        public async Task TestConcurrentImageCreates()
-        {
-            // Initialize the mock in-memory DB and account manager.
-            var cosmosState = new MockCosmosState();
-            var database = new MockCosmosDatabase(cosmosState);
-            var accountContainer = await database.CreateContainerAsync(Constants.AccountContainerName);
-            var imageContainer = await database.CreateContainerAsync(Constants.ImageContainerName);
-            var petImagesClient = new TestPetImagesClient(accountContainer, imageContainer);
+            var serviceClient = await InitializeSystemAsync();
 
             string accountName = "MyAccount";
             string imageName = "pet.jpg";
+            string contentType = "image/jpeg";
 
-            var createResult = await petImagesClient.CreateAccountAsync(new Account()
+            // Create an account request payload
+            var account = new Account()
             {
-                Name = accountName
-            });
+                Name = accountName,
+                ContactEmailAddress = "john@acme.com"
+            };
+
+            var accountResult = await serviceClient.CreateAccountAsync(account);
+            Assert.IsTrue(accountResult.StatusCode == HttpStatusCode.OK);
+
+            var createResult = await serviceClient.CreateOrUpdateImageAsync(
+                accountName,
+                new Image()
+                {
+                    Name = imageName,
+                    ContentType = contentType,
+                    Content = GetDogImageBytes()
+                });
             Assert.IsTrue(createResult.StatusCode == HttpStatusCode.OK);
 
-            var oldImage = new Image()
-            {
-                Name = imageName,
-                Content = GetDogImageBytes(),
-                LastModifiedTimestamp = DateTime.UtcNow
-            };
+            var utcNow = DateTime.UtcNow;
 
-            var newImage = new Image()
-            {
-                Name = imageName,
-                Content = GetCatImageBytes(),
-                LastModifiedTimestamp = DateTime.UtcNow.AddMinutes(10)
-            };
+            var updateResult1 = serviceClient.CreateOrUpdateImageAsync(
+                accountName,
+                new Image()
+                {
+                    Name = imageName,
+                    ContentType = contentType,
+                    Content = GetCatImageBytes(),
+                    LastModifiedTimestamp = utcNow
+                });
+            var updateResult2 = serviceClient.CreateOrUpdateImageAsync(
+                accountName,
+                new Image()
+                {
+                    Name = imageName,
+                    ContentType = contentType,
+                    Content = GetParrotImageBytes(),
+                    LastModifiedTimestamp = utcNow.AddDays(1)
+                });
 
-            var createOldImageTask = petImagesClient.CreateOrUpdateImageAsync(accountName, oldImage);
-            var createNewImageTask = petImagesClient.CreateOrUpdateImageAsync(accountName, newImage);
+            await Task.WhenAll(updateResult1, updateResult2);
 
-            await Task.WhenAll(createOldImageTask, createNewImageTask);
-
-            var createOldImageResult = createOldImageTask.Result;
-            var createNewImageResult = createNewImageTask.Result;
+            var statusCode1 = updateResult1.Result.StatusCode;
+            var statusCode2 = updateResult2.Result.StatusCode;
 
             Assert.IsTrue(
-                (createOldImageResult.StatusCode == HttpStatusCode.Conflict && createNewImageResult.StatusCode == HttpStatusCode.OK) ||
-                (createOldImageResult.StatusCode == HttpStatusCode.OK && createNewImageResult.StatusCode == HttpStatusCode.OK));
-
-            var imageResult = await petImagesClient.GetImageAsync(accountName, imageName);
-            Assert.IsTrue(imageResult.StatusCode == HttpStatusCode.OK);
-            Assert.IsTrue(imageResult.Resource.LastModifiedTimestamp == newImage.LastModifiedTimestamp);
+                (statusCode1 == HttpStatusCode.OK && statusCode2 == HttpStatusCode.Conflict) ||
+                (statusCode1 == HttpStatusCode.Conflict && statusCode2 == HttpStatusCode.OK) ||
+                (statusCode1 == HttpStatusCode.BadRequest && statusCode2 == HttpStatusCode.OK) ||
+                (statusCode1 == HttpStatusCode.OK && statusCode2 == HttpStatusCode.OK));
         }
 
         [TestMethod]
-        public async Task TestConcurrentImageUpdates()
+        public async Task TestSecondScenarioCreateAsync()
         {
-            // Initialize the mock in-memory DB and account manager.
-            var cosmosState = new MockCosmosState();
-            var database = new MockCosmosDatabase(cosmosState);
-            var accountContainer = await database.CreateContainerAsync(Constants.AccountContainerName);
-            var imageContainer = await database.CreateContainerAsync(Constants.ImageContainerName);
-            var petImagesClient = new TestPetImagesClient(accountContainer, imageContainer);
+            var serviceClient = await InitializeSystemAsync();
 
             string accountName = "MyAccount";
             string imageName = "pet.jpg";
+            string contentType = "image/jpeg";
 
-            var createAccountResult = await petImagesClient.CreateAccountAsync(new Account()
+            // Create an account request payload
+            var account = new Account()
             {
-                Name = accountName
-            });
-            Assert.IsTrue(createAccountResult.StatusCode == HttpStatusCode.OK);
-
-            var createImageResult = await petImagesClient.CreateOrUpdateImageAsync(accountName, new Image()
-            {
-                Name = imageName,
-                Content = GetDogImageBytes(),
-                LastModifiedTimestamp = DateTime.UtcNow
-            });
-            Assert.IsTrue(createImageResult.StatusCode == HttpStatusCode.OK);
-
-            var oldImage = new Image()
-            {
-                Name = imageName,
-                Content = GetDogImageBytes(),
-                LastModifiedTimestamp = DateTime.UtcNow.AddMinutes(5)
+                Name = accountName,
+                ContactEmailAddress = "john@acme.com"
             };
 
-            var newImage = new Image()
-            {
-                Name = imageName,
-                Content = GetCatImageBytes(),
-                LastModifiedTimestamp = DateTime.UtcNow.AddMinutes(10)
-            };
+            var accountResult = await serviceClient.CreateAccountAsync(account);
+            Assert.IsTrue(accountResult.StatusCode == HttpStatusCode.OK);
 
-            var updateOldImageTask = petImagesClient.CreateOrUpdateImageAsync(accountName, oldImage);
-            var updateNewImageTask = petImagesClient.CreateOrUpdateImageAsync(accountName, newImage);
+            var utcNow = DateTime.UtcNow;
 
-            await Task.WhenAll(updateOldImageTask, updateNewImageTask);
+            var createResult1 = serviceClient.CreateOrUpdateImageAsync(
+                accountName,
+                new Image()
+                {
+                    Name = imageName,
+                    ContentType = contentType,
+                    Content = GetCatImageBytes(),
+                    LastModifiedTimestamp = utcNow
+                });
+            var createResult2 = serviceClient.CreateOrUpdateImageAsync(
+                accountName,
+                new Image()
+                {
+                    Name = imageName,
+                    ContentType = contentType,
+                    Content = GetParrotImageBytes(),
+                    LastModifiedTimestamp = utcNow.AddDays(1)
+                });
 
-            var updateOldImageResult = updateOldImageTask.Result;
-            var updateNewImageResult = updateNewImageTask.Result;
+            await Task.WhenAll(createResult1, createResult2);
+
+            var statusCode1 = createResult1.Result.StatusCode;
+            var statusCode2 = createResult2.Result.StatusCode;
 
             Assert.IsTrue(
-                (updateOldImageResult.StatusCode == HttpStatusCode.Conflict && updateNewImageResult.StatusCode == HttpStatusCode.OK) ||
-                (updateOldImageResult.StatusCode == HttpStatusCode.OK && updateNewImageResult.StatusCode == HttpStatusCode.OK));
-
-            var imageResult = await petImagesClient.GetImageAsync(accountName, imageName);
-            Assert.IsTrue(imageResult.StatusCode == HttpStatusCode.OK);
-            Assert.IsTrue(imageResult.Resource.LastModifiedTimestamp == newImage.LastModifiedTimestamp);
+                (statusCode1 == HttpStatusCode.OK && statusCode2 == HttpStatusCode.Conflict) ||
+                (statusCode1 == HttpStatusCode.Conflict && statusCode2 == HttpStatusCode.OK) ||
+                (statusCode1 == HttpStatusCode.BadRequest && statusCode2 == HttpStatusCode.OK) ||
+                (statusCode1 == HttpStatusCode.OK && statusCode2 == HttpStatusCode.OK));
         }
-        
+
+        [TestMethod]
+        public void SystematicTestFirstScenario()
+        {
+            RunSystematicTest(TestFirstScenarioAsync);
+        }
+
+        [TestMethod]
+        public void SystematicTestSecondScenarioUpdate()
+        {
+            RunSystematicTest(TestSecondScenarioUpdateAsync);
+        }
+
+        [TestMethod]
+        public void SystematicTestSecondScenarioCreate()
+        {
+            RunSystematicTest(TestSecondScenarioCreateAsync);
+        }
+
+        private static async Task<IServiceClient> InitializeSystemAsync()
+        {
+            Logger.WriteLine("\r\nBeginning test iteration\r\n");
+
+            if (useInMemoryClient)
+            {
+                var cosmosState = new MockCosmosState();
+
+                var cosmosDatabase = new MockCosmosDatabase(cosmosState);
+
+                await cosmosDatabase.CreateContainerIfNotExistsAsync(Constants.AccountContainerName);
+                await cosmosDatabase.CreateContainerIfNotExistsAsync(Constants.ImageContainerName);
+
+                var serviceClient = new InMemoryTestServiceClient(
+                    cosmosDatabase);
+
+                return serviceClient;
+            }
+            else
+            {
+                var factory = new ServiceFactory();
+                await factory.InitializeCosmosDatabaseAsync();
+
+                return new TestServiceClient(factory);
+            }
+        }
+
         /// <summary>
-         /// Invoke the Coyote systematic testing engine to run the specified test multiple iterations,
-         /// each iteration exploring potentially different interleavings using some underlying program
-         /// exploration strategy (by default a uniform probabilistic strategy).
-         /// </summary>
-         /// <remarks>
-         /// Learn more in our documentation: https://microsoft.github.io/coyote/how-to/unit-testing
-         /// </remarks>
+        /// Invoke the Coyote systematic testing engine to run the specified test multiple iterations,
+        /// each iteration exploring potentially different interleavings using some underlying program
+        /// exploration strategy (by default a uniform probabilistic strategy).
+        /// </summary>
+        /// <remarks>
+        /// Learn more in our documentation: https://microsoft.github.io/coyote/how-to/unit-testing
+        /// </remarks>
         private static void RunSystematicTest(Func<Task> test, string reproducibleScheduleFilePath = null)
         {
             // Configuration for how to run a concurrency unit test with Coyote.
             // This configuration will run the test 1000 times exploring different paths each time.
-            var config = Configuration.Create().WithTestingIterations(1000);
+            var config = Configuration
+                .Create()
+                .WithMaxSchedulingSteps(5000)
+                .WithTestingIterations(useInMemoryClient ? (uint)1000 : 100);
 
             if (reproducibleScheduleFilePath != null)
             {
@@ -189,7 +242,14 @@ namespace PetImagesTest
                 config = config.WithReplayStrategy(trace);
             }
 
-            var testingEngine = TestingEngine.Create(config, test);
+            async Task TestActionAsync()
+            {
+                Specification.RegisterMonitor<TestLivenessSpec>();
+                await test();
+                Specification.Monitor<TestLivenessSpec>(new TestTerminalEvent());
+            };
+
+            var testingEngine = TestingEngine.Create(config, TestActionAsync);
 
             try
             {
@@ -217,20 +277,46 @@ namespace PetImagesTest
                 }
 
                 Assert.IsTrue(testingEngine.TestReport.NumOfFoundBugs == 0, assertionText);
+
+                Console.WriteLine(testingEngine.TestReport.GetText(config));
             }
             finally
             {
                 testingEngine.Stop();
+
+                Logger.WriteToFile("PetImages.log");
+                Logger.Clear();
             }
         }
 
         private static byte[] GetDogImageBytes() => new byte[] { 1, 2, 3 };
         private static byte[] GetCatImageBytes() => new byte[] { 4, 5, 6 };
+        private static byte[] GetParrotImageBytes() => new byte[] { 7, 8, 9 };
 
-        private static bool IsDogImage(byte[] imageBytes) => imageBytes.SequenceEqual(GetDogImageBytes());
-        private static bool IsCatImage(byte[] imageBytes) => imageBytes.SequenceEqual(GetCatImageBytes());
+        private static bool IsDogImage(byte[] bytes) => bytes.SequenceEqual(GetDogImageBytes());
+        private static bool IsDogThumbnail(byte[] bytes) => bytes.SequenceEqual(GetDogImageBytes());
+        private static bool IsCatImage(byte[] bytes) => bytes.SequenceEqual(GetCatImageBytes());
+        private static bool IsCatThumbnail(byte[] bytes) => bytes.SequenceEqual(GetCatImageBytes());
+        private static bool IsParrotImage(byte[] bytes) => bytes.SequenceEqual(GetParrotImageBytes());
+        private static bool IsParrotThumbnail(byte[] bytes) => bytes.SequenceEqual(GetParrotImageBytes());
+    }
 
-        private static bool IsDogThumbnail(byte[] thumbnailBytes) => thumbnailBytes.SequenceEqual(GetDogImageBytes());
-        private static bool IsCatThumbnail(byte[] thumbnailBytes) => thumbnailBytes.SequenceEqual(GetCatImageBytes());
+    public class TestLivenessSpec : Monitor
+    {
+        [Hot]
+        [Start]
+        [OnEventGotoState(typeof(TestTerminalEvent), typeof(Terminal))]
+        private class Init : State
+        {
+        }
+
+        [OnEventGotoState(typeof(TestTerminalEvent), typeof(Terminal))]
+        private class Terminal : State
+        {
+        }
+    }
+
+    public class TestTerminalEvent : Event
+    {
     }
 }

@@ -15,7 +15,5 @@ namespace PetImagesTest.Clients
         public Task<ServiceResponse<Image>> GetImageAsync(string accountName, string imageName);
 
         public Task<ServiceResponse<byte[]>> GetImageContentAsync(string accountName, string imageName);
-
-        public Task<ServiceResponse<byte[]>> GetImageThumbnailAsync(string accountName, string imageName);
     }
 }

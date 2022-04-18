@@ -7,14 +7,7 @@ using Microsoft.Coyote.SystematicTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PetImages;
 using PetImages.Contracts;
-using PetImages.Messaging;
-using PetImages.Persistence;
-using PetImages.RetryFramework;
-using PetImages.TestRetryFramework;
-using PetImagesTest.Exceptions;
-using PetImagesTest.MessagingMocks;
 using PetImagesTest.PersistenceMocks;
-using Polly;
 using System;
 using System.Globalization;
 using System.IO;
@@ -95,21 +88,6 @@ namespace PetImagesTest.Clients
                     Content = GetDogImageBytes()
                 });
             Assert.IsTrue(createResult.StatusCode == HttpStatusCode.OK);
-
-            Image image;
-            while (true)
-            {
-                var imageResult = await serviceClient.GetImageAsync(accountName, imageName);
-                Assert.IsTrue(imageResult.StatusCode == HttpStatusCode.OK);
-
-                image = imageResult.Resource;
-                if (image.State == ImageState.Created.ToString())
-                {
-                    break;
-                }
-
-                await Task.Delay(100);
-            }
 
             var utcNow = DateTime.UtcNow;
 
@@ -252,144 +230,6 @@ namespace PetImagesTest.Clients
         }
 
         [TestMethod]
-        public async Task TestFourthScenarioAsync()
-        {
-            var serviceClient = await InitializeSystemAsync();
-
-            string accountName = "MyAccount";
-            string imageName = "pet.jpg";
-            string contentType = "image/jpeg";
-
-            // Create an account request payload
-            var account = new Account()
-            {
-                Name = accountName,
-                ContactEmailAddress = "john@acme.com"
-            };
-
-            var accountResult = await serviceClient.CreateAccountAsync(account);
-            Assert.IsTrue(accountResult.StatusCode == HttpStatusCode.OK);
-
-            var task1 = serviceClient.CreateOrUpdateImageAsync(
-                accountName,
-                new Image() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
-            var task2 = serviceClient.CreateOrUpdateImageAsync(
-                accountName,
-                new Image() { Name = imageName, ContentType = contentType, Content = GetCatImageBytes() });
-
-            await Task.WhenAll(task1, task2);
-
-            var statusCode1 = task1.Result.StatusCode;
-            var statusCode2 = task2.Result.StatusCode;
-
-            Assert.IsTrue(
-                (statusCode1 == HttpStatusCode.OK && statusCode2 == HttpStatusCode.Conflict) ||
-                (statusCode1 == HttpStatusCode.Conflict && statusCode2 == HttpStatusCode.OK) ||
-                (statusCode1 == HttpStatusCode.OK && statusCode2 == HttpStatusCode.OK));
-
-            Image image;
-            while (true)
-            {
-                var imageResult = await serviceClient.GetImageAsync(accountName, imageName);
-                Assert.IsTrue(imageResult.StatusCode == HttpStatusCode.OK);
-
-                image = imageResult.Resource;
-                if (image.State == ImageState.Created.ToString())
-                {
-                    break;
-                }
-
-                await Task.Delay(100);
-            }
-
-            var imageContentResult = await serviceClient.GetImageContentAsync(accountName, imageName);
-            Assert.IsTrue(imageContentResult.StatusCode == HttpStatusCode.OK);
-
-            var thumbnailContentResult = await serviceClient.GetImageThumbnailAsync(accountName, imageName);
-            Assert.IsTrue(thumbnailContentResult.StatusCode == HttpStatusCode.OK);
-
-            var imageContent = imageContentResult.Resource;
-            var thumbnail = thumbnailContentResult.Resource;
-
-            if (statusCode1 == HttpStatusCode.OK && statusCode2 != HttpStatusCode.OK)
-            {
-                Assert.IsTrue(IsDogImage(imageContent) && IsDogThumbnail(thumbnail));
-            }
-            else if (statusCode1 != HttpStatusCode.OK && statusCode2 == HttpStatusCode.OK)
-            {
-                Assert.IsTrue(IsCatImage(imageContent) && IsCatThumbnail(thumbnail));
-            }
-            else
-            {
-                Assert.IsTrue(
-                    (IsDogImage(imageContent) && IsDogThumbnail(thumbnail)) ||
-                    (IsCatImage(imageContent) && IsCatThumbnail(thumbnail)));
-            }
-        }
-
-        [TestMethod]
-        public async Task TestFifthScenarioAsync()
-        {
-            var randomizedFaultPolicy = TestRetryPolicyFactory.GetRandomPermanentFailureAsyncPolicy();
-            randomizedFaultPolicy.ShouldRandomlyFail = false;
-
-            var serviceClient = await InitializeSystemAsync(randomizedFaultPolicy);
-
-            string accountName = "MyAccount";
-            string imageName = "pet.jpg";
-            string contentType = "image/jpeg";
-
-            // Create an account request payload
-            var account = new Account()
-            {
-                Name = accountName,
-                ContactEmailAddress = "john@acme.com"
-            };
-
-            var accountResult = await serviceClient.CreateAccountAsync(account);
-            Assert.IsTrue(accountResult.StatusCode == HttpStatusCode.OK);
-
-            randomizedFaultPolicy.ShouldRandomlyFail = true;
-
-            try
-            {
-                var _ = await serviceClient.CreateOrUpdateImageAsync(
-                    accountName,
-                    new Image() { Name = imageName, ContentType = contentType, Content = GetDogImageBytes() });
-                Assert.IsTrue(_.StatusCode == HttpStatusCode.OK);
-            }
-            catch (SimulatedRandomFaultException)
-            {
-            }
-
-            randomizedFaultPolicy.ShouldRandomlyFail = false;
-
-            var imageResult = await serviceClient.GetImageAsync(accountName, imageName);
-            Assert.IsTrue(
-                    imageResult.StatusCode == HttpStatusCode.OK ||
-                    imageResult.StatusCode == HttpStatusCode.NotFound);
-
-            if (imageResult.StatusCode == HttpStatusCode.NotFound)
-            {
-                return;
-            }
-
-            while (true)
-            {
-                imageResult = await serviceClient.GetImageAsync(accountName, imageName);
-                Assert.IsTrue(imageResult.StatusCode == HttpStatusCode.OK);
-
-                var image = imageResult.Resource;
-                if (image.State == ImageState.Created.ToString())
-                {
-                    break;
-                }
-
-                await Task.Delay(100);
-            }
-        }
-
-        [TestMethod]
         public void SystematicTestFirstScenario()
         {
             RunSystematicTest(TestFirstScenarioAsync);
@@ -413,19 +253,7 @@ namespace PetImagesTest.Clients
             RunSystematicTest(TestThirdScenarioAsync);
         }
 
-        [TestMethod]
-        public void SystematicTestFourthScenario()
-        {
-            RunSystematicTest(TestFourthScenarioAsync);
-        }
-
-        [TestMethod]
-        public void SystematicTestFifthScenario()
-        {
-            RunSystematicTest(TestFifthScenarioAsync);
-        }
-
-        private static async Task<IServiceClient> InitializeSystemAsync(IAsyncPolicy asyncPolicy = null)
+        private static async Task<IServiceClient> InitializeSystemAsync()
         {
             Logger.WriteLine("\r\nBeginning test iteration\r\n");
 
@@ -433,30 +261,16 @@ namespace PetImagesTest.Clients
             {
                 var cosmosState = new MockCosmosState();
 
-                if (asyncPolicy == null)
-                {
-                    asyncPolicy = RetryPolicyFactory.GetAsyncRetryExponential();
-                }
-
-                var cosmosDatabase = new WrappedCosmosDatabase(
-                    new MockCosmosDatabase(cosmosState),
-                    asyncPolicy);
+                var cosmosDatabase = new MockCosmosDatabase(cosmosState);
 
                 await cosmosDatabase.CreateContainerIfNotExistsAsync(Constants.AccountContainerName);
                 await cosmosDatabase.CreateContainerIfNotExistsAsync(Constants.ImageContainerName);
 
-                var storageAccount = new WrappedStorageAccount(
-                    new MockStorageAccount(),
-                    asyncPolicy);
-
-                var messagingClient = new WrappedMessagingClient(
-                    new MockMessagingClient(cosmosDatabase, storageAccount),
-                    asyncPolicy);
+                var storageAccount = new MockStorageAccount();
 
                 var serviceClient = new InMemoryTestServiceClient(
                     cosmosDatabase,
-                    storageAccount,
-                    messagingClient);
+                    storageAccount);
 
                 return serviceClient;
             }

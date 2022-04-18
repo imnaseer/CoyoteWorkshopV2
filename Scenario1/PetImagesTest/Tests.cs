@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 
 using Microsoft.Coyote;
+using Microsoft.Coyote.Specifications;
 using Microsoft.Coyote.SystematicTesting;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PetImages;
 using PetImages.Contracts;
-using PetImagesTest.Clients;
-using PetImagesTest.StorageMocks;
+using PetImagesTest.PersistenceMocks;
 using System;
 using System.Globalization;
 using System.IO;
@@ -15,30 +15,36 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace PetImagesTest
+namespace PetImagesTest.Clients
 {
     [TestClass]
     public class Tests
     {
-        [TestMethod]
-        public async Task TestFirstScenario()
-        {
-            // Initialize the mock in-memory DB and account manager.
-            var cosmosState = new MockCosmosState();
-            var database = new MockCosmosDatabase(cosmosState);
-            var accountContainer = await database.CreateContainerAsync(Constants.AccountContainerName);
-            var petImagesClient = new TestPetImagesClient(accountContainer);
+        private static readonly bool useInMemoryClient = true;
 
-            // Create an account request payload
-            var account = new Account()
+        [TestMethod]
+        public async Task TestFirstScenarioAsync()
+        {
+            var serviceClient = await InitializeSystemAsync();
+
+            var accountName = "MyAccount";
+
+            var account1 = new Account()
             {
-                Name = "MyAccount"
+                Name = accountName,
+                ContactEmailAddress = "john@acme.com"
+            };
+
+            var account2 = new Account()
+            {
+                Name = accountName,
+                ContactEmailAddress = "sally@contoso.com"
             };
 
             // Call CreateAccount twice without awaiting, which makes both methods run
             // asynchronously with each other.
-            var task1 = petImagesClient.CreateAccountAsync(account);
-            var task2 = petImagesClient.CreateAccountAsync(account);
+            var task1 = serviceClient.CreateAccountAsync(account1);
+            var task2 = serviceClient.CreateAccountAsync(account2);
 
             // Then wait both requests to complete.
             await Task.WhenAll(task1, task2);
@@ -57,7 +63,32 @@ namespace PetImagesTest
         [TestMethod]
         public void SystematicTestFirstScenario()
         {
-            RunSystematicTest(TestFirstScenario);
+            RunSystematicTest(TestFirstScenarioAsync);
+        }
+        private static async Task<IServiceClient> InitializeSystemAsync()
+        {
+            Logger.WriteLine("\r\nBeginning test iteration\r\n");
+
+            if (useInMemoryClient)
+            {
+                var cosmosState = new MockCosmosState();
+
+                var cosmosDatabase = new MockCosmosDatabase(cosmosState);
+
+                await cosmosDatabase.CreateContainerIfNotExistsAsync(Constants.AccountContainerName);
+
+                var serviceClient = new InMemoryTestServiceClient(
+                    cosmosDatabase);
+
+                return serviceClient;
+            }
+            else
+            {
+                var factory = new ServiceFactory();
+                await factory.InitializeCosmosDatabaseAsync();
+
+                return new TestServiceClient(factory);
+            }
         }
 
         /// <summary>
@@ -72,7 +103,10 @@ namespace PetImagesTest
         {
             // Configuration for how to run a concurrency unit test with Coyote.
             // This configuration will run the test 1000 times exploring different paths each time.
-            var config = Configuration.Create().WithTestingIterations(1000);
+            var config = Configuration
+                .Create()
+                .WithMaxSchedulingSteps(5000)
+                .WithTestingIterations(useInMemoryClient ? (uint)1000 : 100);
 
             if (reproducibleScheduleFilePath != null)
             {
@@ -80,7 +114,14 @@ namespace PetImagesTest
                 config = config.WithReplayStrategy(trace);
             }
 
-            var testingEngine = TestingEngine.Create(config, test);
+            async Task TestActionAsync()
+            {
+                Specification.RegisterMonitor<TestLivenessSpec>();
+                await test();
+                Specification.Monitor<TestLivenessSpec>(new TestTerminalEvent());
+            };
+
+            var testingEngine = TestingEngine.Create(config, TestActionAsync);
 
             try
             {
@@ -108,20 +149,46 @@ namespace PetImagesTest
                 }
 
                 Assert.IsTrue(testingEngine.TestReport.NumOfFoundBugs == 0, assertionText);
+
+                Console.WriteLine(testingEngine.TestReport.GetText(config));
             }
             finally
             {
                 testingEngine.Stop();
+
+                Logger.WriteToFile("PetImages.log");
+                Logger.Clear();
             }
         }
 
         private static byte[] GetDogImageBytes() => new byte[] { 1, 2, 3 };
         private static byte[] GetCatImageBytes() => new byte[] { 4, 5, 6 };
+        private static byte[] GetParrotImageBytes() => new byte[] { 7, 8, 9 };
 
-        private static bool IsDogImage(byte[] imageBytes) => imageBytes.SequenceEqual(GetDogImageBytes());
-        private static bool IsCatImage(byte[] imageBytes) => imageBytes.SequenceEqual(GetCatImageBytes());
+        private static bool IsDogImage(byte[] bytes) => bytes.SequenceEqual(GetDogImageBytes());
+        private static bool IsDogThumbnail(byte[] bytes) => bytes.SequenceEqual(GetDogImageBytes());
+        private static bool IsCatImage(byte[] bytes) => bytes.SequenceEqual(GetCatImageBytes());
+        private static bool IsCatThumbnail(byte[] bytes) => bytes.SequenceEqual(GetCatImageBytes());
+        private static bool IsParrotImage(byte[] bytes) => bytes.SequenceEqual(GetParrotImageBytes());
+        private static bool IsParrotThumbnail(byte[] bytes) => bytes.SequenceEqual(GetParrotImageBytes());
+    }
 
-        private static bool IsDogThumbnail(byte[] thumbnailBytes) => thumbnailBytes.SequenceEqual(GetDogImageBytes());
-        private static bool IsCatThumbnail(byte[] thumbnailBytes) => thumbnailBytes.SequenceEqual(GetCatImageBytes());
+    public class TestLivenessSpec : Monitor
+    {
+        [Hot]
+        [Start]
+        [OnEventGotoState(typeof(TestTerminalEvent), typeof(Terminal))]
+        private class Init : State
+        {
+        }
+
+        [OnEventGotoState(typeof(TestTerminalEvent), typeof(Terminal))]
+        private class Terminal : State
+        {
+        }
+    }
+
+    public class TestTerminalEvent : Event
+    {
     }
 }

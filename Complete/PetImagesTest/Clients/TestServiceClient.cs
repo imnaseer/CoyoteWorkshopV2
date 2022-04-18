@@ -41,7 +41,7 @@ namespace PetImagesTest.Clients
 
         public async Task<ServiceResponse<Image>> CreateOrUpdateImageAsync(string accountName, Image image)
         {
-            var response = await this.Client.PostAsync(
+            var response = await this.Client.PutAsync(
                 new Uri($"accounts/{accountName}/images", UriKind.RelativeOrAbsolute),
                 JsonContent.Create(image));
 

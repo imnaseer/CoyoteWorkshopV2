@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
+using PetImages.Contracts;
 using System.Net;
 
 namespace PetImagesTest.Clients
@@ -10,5 +11,7 @@ namespace PetImagesTest.Clients
         public HttpStatusCode? StatusCode { get; set; }
 
         public T Resource { get; set; }
+
+        public Error Error { get; set; }
     }
 }

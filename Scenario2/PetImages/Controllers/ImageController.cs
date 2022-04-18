@@ -3,51 +3,61 @@
 
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
-using PetImages.Entities;
+using PetImages.CosmosContracts;
 using PetImages.Exceptions;
-using PetImages.Storage;
+using PetImages.Persistence;
+using System;
 using System.Threading.Tasks;
 
 namespace PetImages.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
     public class ImageController : ControllerBase
     {
-        private readonly ICosmosContainer AccountContainer;
-        private readonly ICosmosContainer ImageContainer;
+        private readonly ICosmosDatabase CosmosDatabase;
 
-        public ImageController(ICosmosContainer accountContainer, ICosmosContainer imageContainer)
+        public ImageController(
+            ICosmosDatabase cosmosDatabase)
         {
-            this.AccountContainer = accountContainer;
-            this.ImageContainer = imageContainer;
+            this.CosmosDatabase = cosmosDatabase;
         }
 
         /// <summary>
-        /// Create or update an image (as long as it has a newer last modified timestamp)
+        /// ...
         /// </summary>
-        [HttpPost]
+        [HttpPut]
+        [Route(Routes.Images)]
         public async Task<ActionResult<Image>> CreateOrUpdateImageAsync(string accountName, Image image)
         {
-            if (!await StorageHelper.DoesItemExist<AccountItem>(this.AccountContainer, partitionKey: accountName, id: accountName))
+            var maybeError = await ValidateImageAsync(accountName, image);
+            if (maybeError != null)
             {
-                return this.NotFound();
+                return this.BadRequest(maybeError);
             }
 
-            // TODO: Implement the logic to only create/update an image if its
-            // last modified timestamp is greater than the existing imag (if one exists)
-            var imageItem = image.ToItem();
-            imageItem = await this.ImageContainer.UpsertItem(imageItem);
+            var imageItem = image.ToImageItem(accountName);
 
-            return this.Ok(imageItem.ToImage());
+            throw new NotImplementedException();
         }
 
         [HttpGet]
-        public async Task<ActionResult<Image>> GetImageAsync(string accountName, string imageName)
+        [Route(Routes.ImageInstance)]
+        public async Task<ActionResult<Image>> GetImageAsync(
+            [FromRoute] string accountName,
+            [FromRoute] string imageName)
         {
+            var maybeError = await ValidateAccountAsync(accountName);
+            if (maybeError != null)
+            {
+                return this.BadRequest(maybeError);
+            }
+
             try
             {
-                var imageItem = await this.ImageContainer.GetItem<ImageItem>(partitionKey: imageName, id: imageName);
+                var imageItem = await this.CosmosDatabase.GetItemAsync<ImageItem>(
+                    Constants.ImageContainerName,
+                    partitionKey: accountName,
+                    id: imageName);
                 return this.Ok(imageItem.ToImage());
             }
             catch (DatabaseItemDoesNotExistException)
@@ -56,5 +66,79 @@ namespace PetImages.Controllers
             }
         }
 
+        [HttpDelete]
+        [Route(Routes.ImageInstance)]
+        public async Task<ActionResult> DeleteImageAsync(string accountName, string imageName)
+        {
+            var maybeError = await ValidateAccountAsync(accountName);
+            if (maybeError != null)
+            {
+                return this.BadRequest(maybeError);
+            }
+
+            try
+            {
+                var imageItem = await this.CosmosDatabase.GetItemAsync<ImageItem>(
+                    Constants.ImageContainerName,
+                    partitionKey: accountName,
+                    id: imageName);
+
+                await this.CosmosDatabase.DeleteItemAsync(
+                    Constants.ImageContainerName,
+                    partitionKey: accountName,
+                    id: imageName);
+
+                return this.Ok();
+            }
+            catch (DatabaseItemDoesNotExistException)
+            {
+                return this.NoContent();
+            }
+        }
+
+        private async Task<Error> ValidateImageAsync(string accountName, Image image)
+        {
+            var maybeError = await ValidateAccountAsync(accountName);
+            if (maybeError != null)
+            {
+                return maybeError;
+            }
+
+            if (image == null)
+            {
+                return ErrorFactory.ParsingError(nameof(Image));
+            }
+
+            if (string.IsNullOrWhiteSpace(image.Name))
+            {
+                return ErrorFactory.InvalidParameterValueError(nameof(Image.Name), image.Name);
+            }
+
+            if (string.IsNullOrWhiteSpace(image.ContentType))
+            {
+                return ErrorFactory.InvalidParameterValueError(nameof(Image.ContentType), image.ContentType);
+            }
+
+            if (image.Content == null)
+            {
+                return ErrorFactory.InvalidParameterValueError(nameof(Image.Content), image.Content);
+            }
+
+            return null;
+        }
+
+        private async Task<Error> ValidateAccountAsync(string accountName)
+        {
+            if (!await CosmosHelper.DoesItemExistAsync<AccountItem>(
+                CosmosDatabase,
+                Constants.AccountContainerName,
+                partitionKey: accountName,
+                id: accountName))
+            {
+                return ErrorFactory.AccountDoesNotExistError(accountName);
+            }
+
+            return null;
+        }
     }
 }

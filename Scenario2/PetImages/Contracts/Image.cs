@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PetImages.Entities;
+using PetImages.CosmosContracts;
 using System;
 
 namespace PetImages.Contracts
@@ -10,7 +10,7 @@ namespace PetImages.Contracts
     {
         public string Name { get; set; }
 
-        public string ImageType { get; set; }
+        public string ContentType { get; set; }
 
         public string[] Tags { get; set; }
 
@@ -18,13 +18,13 @@ namespace PetImages.Contracts
 
         public DateTime LastModifiedTimestamp { get; set; }
 
-        public ImageItem ToItem()
+        public ImageItem ToImageItem(string accountName)
         {
             return new ImageItem()
             {
                 Id = Name,
-                StorageName = Name,
-                ImageType = ImageType,
+                AccountName = accountName,
+                ContentType = ContentType,
                 Tags = Tags,
                 LastModifiedTimestamp = LastModifiedTimestamp
             };

@@ -1,7 +1,8 @@
 {
-  "AssembliesPath": "./PetImagesTest/bin/net5.0",
+  "AssembliesPath": "./PetImagesTest/bin/net6.0",
   "Assemblies": [
     "PetImages.dll",
     "PetImagesTest.dll"
-  ]
+  ],
+  "IsRewritingConcurrentCollections":"false"
 }

@@ -85,36 +85,6 @@ namespace PetImages.Controllers
             }
         }
 
-        /// <summary>
-        /// CreateAccountAsync fixed.
-        /// </summary>
-        [HttpPost]
-        [Route(Routes.Accounts)]
-        [NonAction]
-        public async Task<ActionResult<Account>> CreateAccountAsyncIncorrectAsync(Account account)
-        {
-            var maybeError = ValidateAccount(account);
-            if (maybeError != null)
-            {
-                return this.BadRequest(maybeError);
-            }
-
-            var accountItem = account.ToItem();
-
-            if (await CosmosHelper.DoesItemExistAsync<AccountItem>(
-                this.CosmosDatabase,
-                Constants.AccountContainerName,
-                accountItem.PartitionKey,
-                accountItem.Id))
-            {
-                return this.Conflict();
-            }
-
-            var createdAccountItem = await this.CosmosDatabase.CreateItemAsync(Constants.AccountContainerName, accountItem);
-
-            return this.Ok(createdAccountItem.ToAccount());
-        }
-
         private static Error ValidateAccount(Account account)
         {
             if (account == null)

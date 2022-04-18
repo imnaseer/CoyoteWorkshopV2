@@ -8,7 +8,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using PetImages.Messaging;
 using PetImages.Middleware;
 using PetImages.Persistence;
 
@@ -51,9 +50,6 @@ namespace PetImages
 
             // Add BlobStorage Services
             services.AddSingleton<IStorageAccount>(s => new AzureStorageAccount());
-
-            // Add Messaging Services
-            services.AddSingleton<IMessagingClient>(s => new StorageMessagingClient(Constants.ThumbnailQueueName));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

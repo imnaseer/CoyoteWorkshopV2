@@ -5,9 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
 using PetImages.CosmosContracts;
 using PetImages.Exceptions;
-using PetImages.Messaging;
 using PetImages.Persistence;
-using System;
 using System.Threading.Tasks;
 
 namespace PetImages.Controllers
@@ -17,27 +15,21 @@ namespace PetImages.Controllers
     {
         private readonly ICosmosDatabase CosmosDatabase;
         private readonly IStorageAccount StorageAccount;
-        private readonly IMessagingClient MessagingClient;
 
         public ImageController(
             ICosmosDatabase cosmosDatabase,
-            IStorageAccount storageAccount,
-            IMessagingClient messagingClient)
+            IStorageAccount storageAccount)
         {
             this.CosmosDatabase = cosmosDatabase;
             this.StorageAccount = storageAccount;
-            this.MessagingClient = messagingClient;
         }
 
         /// <summary>
         /// ...
         /// </summary>
-        [HttpPost]
+        [HttpPut]
         [Route(Routes.Images)]
-        [NonAction]
-        public async Task<ActionResult<Image>> CreateImageSecondScenarioAsync(
-            [FromRoute] string accountName,
-            [FromBody] Image image)
+        public async Task<ActionResult<Image>> CreateOrUpdateImageAsync(string accountName, Image image)
         {
             var maybeError = await ValidateImageAsync(accountName, image);
             if (maybeError != null)
@@ -46,62 +38,6 @@ namespace PetImages.Controllers
             }
 
             var imageItem = image.ToImageItem(accountName);
-
-            var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
-                CosmosDatabase,
-                Constants.ImageContainerName,
-                imageItem.PartitionKey,
-                imageItem.Id);
-
-            if (maybeExistingImageItem == null)
-            {
-                try
-                {
-                    imageItem = await this.CosmosDatabase.CreateItemAsync(Constants.ImageContainerName, imageItem);
-                }
-                catch (DatabaseItemAlreadyExistsException)
-                {
-                    return this.Conflict();
-                }
-            }
-            else
-            {
-                if (imageItem.LastModifiedTimestamp < maybeExistingImageItem.LastModifiedTimestamp)
-                {
-                    return this.BadRequest(ErrorFactory.StaleLastModifiedTime(
-                        imageItem.LastModifiedTimestamp,
-                        maybeExistingImageItem.LastModifiedTimestamp));
-                }
-
-                try
-                {
-                    await this.CosmosDatabase.UpsertItemAsync(
-                        Constants.ImageContainerName,
-                        imageItem,
-                        maybeExistingImageItem.ETag);
-                }
-                catch (DatabasePreconditionFailedException)
-                {
-                    return this.Conflict();
-                }
-            }
-
-            return this.Ok(imageItem.ToImage());
-        }
-
-        /// <summary>
-        /// ...
-        /// </summary>
-        [HttpPost]
-        [Route(Routes.Images)]
-        [NonAction]
-        public async Task<ActionResult<Image>> CreateImageThirdScenarioBuggyAsync(string accountName, Image image)
-        {
-            var maybeError = await ValidateImageAsync(accountName, image);
-            if (maybeError != null)
-            {
-                return this.BadRequest(maybeError);
-            }
 
             // We upload the image to Azure Storage, before adding an entry to Cosmos DB
             // so that it is guaranteed to be there when user does a GET request.
@@ -109,150 +45,6 @@ namespace PetImages.Controllers
             // have a create-only API.
             await StorageHelper.CreateContainerIfNotExistsAsync(this.StorageAccount, accountName);
             await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, image.Name, image.ContentType, image.Content);
-
-            var imageItem = image.ToImageItem(accountName);
-            imageItem.BlobName = image.Name; // TODO: Remove this line in workshop code
-            var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
-                this.CosmosDatabase,
-                Constants.ImageContainerName,
-                imageItem.PartitionKey,
-                imageItem.Id);
-
-            if (maybeExistingImageItem == null)
-            {
-                try
-                {
-                    imageItem = await this.CosmosDatabase.CreateItemAsync(Constants.ImageContainerName, imageItem);
-                }
-                catch (DatabaseItemAlreadyExistsException)
-                {
-                    return this.Conflict();
-                }
-            }
-            else
-            {
-                if (imageItem.LastModifiedTimestamp < maybeExistingImageItem.LastModifiedTimestamp)
-                {
-                    return this.BadRequest(ErrorFactory.StaleLastModifiedTime(
-                        imageItem.LastModifiedTimestamp,
-                        maybeExistingImageItem.LastModifiedTimestamp));
-                }
-
-                try
-                {
-                    await this.CosmosDatabase.UpsertItemAsync(
-                        Constants.ImageContainerName,
-                        imageItem,
-                        maybeExistingImageItem.ETag);
-                }
-                catch (DatabasePreconditionFailedException)
-                {
-                    return this.Conflict();
-                }
-            }
-
-            return this.Ok(imageItem.ToImage());
-        }
-
-        /// <summary>
-        /// ...
-        /// </summary>
-        [HttpPost]
-        [Route(Routes.Images)]
-        [NonAction]
-        public async Task<ActionResult<Image>> CreateImageThirdScenarioFixedAsync(string accountName, Image image)
-        {
-            var maybeError = await ValidateImageAsync(accountName, image);
-            if (maybeError != null)
-            {
-                return this.BadRequest(maybeError);
-            }
-
-            var imageItem = image.ToImageItem(
-                accountName,
-                blobName: Guid.NewGuid().ToString());
-
-            // We upload the image to Azure Storage, before adding an entry to Cosmos DB
-            // so that it is guaranteed to be there when user does a GET request.
-            // Note: we're calling CreateOrUpdateBlobAsync because Azure Storage doesn't
-            // have a create-only API.
-            await StorageHelper.CreateContainerIfNotExistsAsync(this.StorageAccount, accountName);
-            await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageItem.BlobName, image.ContentType, image.Content);
-
-            var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
-                this.CosmosDatabase,
-                Constants.ImageContainerName,
-                imageItem.PartitionKey,
-                imageItem.Id);
-
-            if (maybeExistingImageItem == null)
-            {
-                try
-                {
-                    imageItem = await this.CosmosDatabase.CreateItemAsync(Constants.ImageContainerName, imageItem);
-                }
-                catch (DatabaseItemAlreadyExistsException)
-                {
-                    return this.Conflict();
-                }
-            }
-            else
-            {
-                if (imageItem.LastModifiedTimestamp < maybeExistingImageItem.LastModifiedTimestamp)
-                {
-                    return this.BadRequest(ErrorFactory.StaleLastModifiedTime(
-                        imageItem.LastModifiedTimestamp,
-                        maybeExistingImageItem.LastModifiedTimestamp));
-                }
-
-                try
-                {
-                    await this.CosmosDatabase.UpsertItemAsync(
-                        Constants.ImageContainerName,
-                        imageItem,
-                        maybeExistingImageItem.ETag);
-                }
-                catch (DatabasePreconditionFailedException)
-                {
-                    return this.Conflict();
-                }
-            }
-
-            return this.Ok(imageItem.ToImage());
-        }
-
-        /// <summary>
-        /// ...
-        /// </summary>
-        [HttpPost]
-        [Route(Routes.Images)]
-        public async Task<ActionResult<Image>> CreateImageFourthScenarioAsync(string accountName, Image image)
-        {
-            var maybeError = await ValidateImageAsync(accountName, image);
-            if (maybeError != null)
-            {
-                return this.BadRequest(maybeError);
-            }
-
-            var requestId = Guid.NewGuid().ToString();
-
-            await this.MessagingClient.SubmitMessage(new GenerateThumbnailMessage()
-            {
-                AccountName = accountName,
-                ImageName = image.Name,
-                RequestId = requestId
-            });
-
-            var imageItem = image.ToImageItem(accountName, blobName: Guid.NewGuid().ToString());
-            imageItem.State = ImageState.Creating.ToString();
-            imageItem.LastTouchedByRequestId = requestId;
-
-            // We upload the image to Azure Storage, before adding an entry to Cosmos DB
-            // so that it is guaranteed to be there when user does a GET request.
-            // Note: we're calling CreateOrUpdateBlobAsync because Azure Storage doesn't
-            // have a create-only API.
-            await StorageHelper.CreateContainerIfNotExistsAsync(this.StorageAccount, accountName);
-            await this.StorageAccount.CreateOrUpdateBlockBlobAsync(accountName, imageItem.BlobName, image.ContentType, image.Content);
 
             var maybeExistingImageItem = await CosmosHelper.GetItemIfExistsAsync<ImageItem>(
                 this.CosmosDatabase,
@@ -344,7 +136,7 @@ namespace PetImages.Controllers
                     partitionKey: accountName,
                     id: imageName);
 
-                await StorageHelper.DeleteBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.BlobName);
+                await StorageHelper.DeleteBlobIfExistsAsync(this.StorageAccount, accountName, imageName);
 
                 return this.Ok();
             }
@@ -354,7 +146,6 @@ namespace PetImages.Controllers
             }
         }
 
-        // TODO: Fix this, its an action
         [HttpGet]
         [Route(Routes.ImageContentInstance)]
         public async Task<ActionResult<byte[]>> GetImageContentsAsync(
@@ -374,41 +165,7 @@ namespace PetImages.Controllers
                     partitionKey: accountName,
                     id: imageName);
 
-                var maybeBytes = await StorageHelper.GetBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.BlobName);
-
-                if (maybeBytes == null)
-                {
-                    return this.NotFound();
-                }
-
-                return this.File(maybeBytes, imageItem.ContentType);
-            }
-            catch (DatabaseItemDoesNotExistException)
-            {
-                return this.NotFound();
-            }
-        }
-
-        [HttpGet]
-        [Route(Routes.ImageThumbnailInstance)]
-        public async Task<ActionResult<byte[]>> GetImageThumbailAsync(
-            [FromRoute] string accountName,
-            [FromRoute] string imageName)
-        {
-            var maybeError = await ValidateAccountAsync(accountName);
-            if (maybeError != null)
-            {
-                return this.BadRequest(maybeError);
-            }
-
-            try
-            {
-                var imageItem = await this.CosmosDatabase.GetItemAsync<ImageItem>(
-                    Constants.ImageContainerName,
-                    partitionKey: accountName,
-                    id: imageName);
-
-                var maybeBytes = await StorageHelper.GetBlobIfExistsAsync(this.StorageAccount, accountName, imageItem.ThumbnailBlobName);
+                var maybeBytes = await StorageHelper.GetBlobIfExistsAsync(this.StorageAccount, accountName, imageName);
 
                 if (maybeBytes == null)
                 {

@@ -5,10 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using PetImages;
-using PetImages.Messaging;
-using PetImages.RetryFramework;
 using PetImages.Persistence;
-using PetImagesTest.MessagingMocks;
 using PetImagesTest.PersistenceMocks;
 using System.IO;
 using System.Threading.Tasks;
@@ -19,22 +16,12 @@ namespace PetImagesTest
     {
         private readonly IStorageAccount StorageAccount;
         private readonly ICosmosDatabase CosmosDatabase;
-        private readonly IMessagingClient MessagingClient;
 
         public ServiceFactory()
         {
-            this.StorageAccount = new WrappedStorageAccount(
-                new MockStorageAccount(),
-                RetryPolicyFactory.GetAsyncRetryExponential());
+            this.StorageAccount = new MockStorageAccount();
 
-            this.CosmosDatabase = new WrappedCosmosDatabase(
-                new MockCosmosDatabase(new MockCosmosState()),
-                RetryPolicyFactory.GetAsyncRetryExponential());
-
-            var messagingClient = new MockMessagingClient(this.CosmosDatabase, this.StorageAccount);
-            this.MessagingClient = new WrappedMessagingClient(
-                messagingClient,
-                RetryPolicyFactory.GetAsyncRetryExponential());
+            this.CosmosDatabase = new MockCosmosDatabase(new MockCosmosState());
         }
 
         internal async Task InitializeCosmosDatabaseAsync()
@@ -51,7 +38,6 @@ namespace PetImagesTest
                 // Inject the mocks.
                 services.AddSingleton(this.CosmosDatabase);
                 services.AddSingleton(this.StorageAccount);
-                services.AddSingleton(this.MessagingClient);
             });
         }
     }

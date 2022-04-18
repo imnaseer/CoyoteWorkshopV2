@@ -11,7 +11,6 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\PetImages\PetImages.csproj" />
-		<ProjectReference Include="..\PetImages.Worker\PetImages.Worker.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="6.0.4" />
@@ -20,7 +19,6 @@
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
 		<PackageReference Include="MSTest.TestAdapter" Version="2.2.9" />
 		<PackageReference Include="MSTest.TestFramework" Version="2.2.9" />
-		<PackageReference Include="Polly" Version="7.2.3" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Update="coyote.runtimeconfig.json">

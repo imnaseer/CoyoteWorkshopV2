@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PetImages.Contracts;
 using PetImages.Controllers;
-using PetImages.Messaging;
 using PetImages.Middleware;
 using PetImages.Persistence;
 using System;
@@ -18,23 +17,16 @@ namespace PetImagesTest.Clients
     {
         private readonly ICosmosDatabase cosmosDatabase;
         private readonly IStorageAccount blobContainer;
-        private readonly IMessagingClient messagingClient;
 
         public InMemoryTestServiceClient(ICosmosDatabase cosmosDatabase)
-            : this(cosmosDatabase, null, null)
+            : this(cosmosDatabase, null)
         {
         }
 
         public InMemoryTestServiceClient(ICosmosDatabase cosmosDatabase, IStorageAccount blobContainer)
-            : this(cosmosDatabase, blobContainer, null)
-        {
-        }
-
-        public InMemoryTestServiceClient(ICosmosDatabase cosmosDatabase, IStorageAccount blobContainer, IMessagingClient messagingClient)
         {
             this.cosmosDatabase = cosmosDatabase;
             this.blobContainer = blobContainer;
-            this.messagingClient = messagingClient;
         }
 
         public async Task<ServiceResponse<Account>> CreateAccountAsync(Account account)
@@ -59,11 +51,11 @@ namespace PetImagesTest.Clients
 
             return await Task.Run(async () =>
             {
-                var controller = new ImageController(this.cosmosDatabase, this.blobContainer, this.messagingClient);
+                var controller = new ImageController(this.cosmosDatabase, this.blobContainer);
                 var actionResult = await InvokeControllerActionAsync(
                     HttpMethods.Put,
                     new Uri($"/accounts/{accountName}/images", UriKind.RelativeOrAbsolute),
-                    async () => await controller.CreateImageFourthScenarioAsync(accountName, imageCopy));
+                    async () => await controller.CreateOrUpdateImageAsync(accountName, imageCopy));
                 return ExtractServiceResponse<Image>(actionResult.Result);
             });
         }
@@ -72,7 +64,7 @@ namespace PetImagesTest.Clients
         {
             return await Task.Run(async () =>
             {
-                var controller = new ImageController(this.cosmosDatabase, this.blobContainer, this.messagingClient);
+                var controller = new ImageController(this.cosmosDatabase, this.blobContainer);
                 var actionResult = await InvokeControllerActionAsync(
                     HttpMethods.Get,
                     new Uri($"/accounts/{accountName}/images/{imageName}", UriKind.RelativeOrAbsolute),
@@ -85,24 +77,11 @@ namespace PetImagesTest.Clients
         {
             return await Task.Run(async () =>
             {
-                var controller = new ImageController(this.cosmosDatabase, this.blobContainer, this.messagingClient);
+                var controller = new ImageController(this.cosmosDatabase, this.blobContainer);
                 var actionResult = await InvokeControllerActionAsync(
                     HttpMethods.Get,
                     new Uri($"/accounts/{accountName}/images/{imageName}/content", UriKind.RelativeOrAbsolute),
                     async () => await controller.GetImageContentsAsync(accountName, imageName));
-                return ExtractServiceResponse<byte[]>(actionResult.Result);
-            });
-        }
-
-        public async Task<ServiceResponse<byte[]>> GetImageThumbnailAsync(string accountName, string imageName)
-        {
-            return await Task.Run(async () =>
-            {
-                var controller = new ImageController(this.cosmosDatabase, this.blobContainer, this.messagingClient);
-                var actionResult = await InvokeControllerActionAsync(
-                    HttpMethods.Get,
-                    new Uri($"/accounts/{accountName}/images/{imageName}/thumbnail", UriKind.RelativeOrAbsolute),
-                    async () => await controller.GetImageThumbailAsync(accountName, imageName));
                 return ExtractServiceResponse<byte[]>(actionResult.Result);
             });
         }

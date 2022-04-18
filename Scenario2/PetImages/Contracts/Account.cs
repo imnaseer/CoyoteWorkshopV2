@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-using PetImages.Entities;
+using PetImages.CosmosContracts;
 
 namespace PetImages.Contracts
 {
@@ -9,11 +9,14 @@ namespace PetImages.Contracts
     {
         public string Name { get; set; }
 
+        public string ContactEmailAddress { get; set; }
+
         public AccountItem ToItem()
         {
             return new AccountItem()
             {
-                Id = Name
+                Id = Name,
+                ContactEmailAddress = ContactEmailAddress
             };
         }
     }
